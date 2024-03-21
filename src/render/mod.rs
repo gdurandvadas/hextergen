@@ -7,6 +7,8 @@ use imageproc::drawing::{draw_filled_circle_mut, draw_line_segment_mut, draw_pol
 use imageproc::point::Point;
 use rayon::prelude::*;
 
+use self::colors::Colors;
+
 #[derive(Debug)]
 struct Polygon {
     center: Point<f32>,
@@ -126,8 +128,13 @@ impl Quadrant {
             .flat_map(|x| {
                 (start.y..end.y).into_par_iter().map(move |y| {
                     let hex = mesh.get_hex(x, y);
-                    let elevation = topography.get_hex(x, y);
-                    let color = colors::Debug::from_elevation(elevation);
+                    let mut color = colors::Debug::Red.rgba();
+                    if topography.seeds.contains(&hex.offset) {
+                        color = colors::Debug::Green.rgba();
+                    } else {
+                        let elevation = topography.get_hex(x, y);
+                        color = colors::Debug::from_elevation(elevation);
+                    }
                     Polygon::new(hex, color, &displacement)
                 })
             })

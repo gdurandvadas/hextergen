@@ -21,7 +21,7 @@ type WrapAround = bool;
 /// assert_eq!(coord.x, 10);
 /// assert_eq!(coord.y, 20);
 /// ```
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Coord {
     pub x: i32,
     pub y: i32,
@@ -86,7 +86,6 @@ impl Coord {
         let cyl_y = angle_x.sin() / (2.0 * std::f32::consts::PI);
         let cyl_z = ny;
         (cyl_x, cyl_y, cyl_z)
-
     }
 }
 

@@ -20,10 +20,10 @@ pub enum Debug {
 impl Colors for Debug {
     fn values(&self) -> [u8; 3] {
         match self {
-            Self::Brown => [221, 170, 122],
-            Self::Green => [115, 210, 116],
-            Self::Red => [224, 123, 130],
-            Self::Blue => [104, 154, 206],
+            Self::Brown => [255, 181, 112],
+            Self::Green => [97, 255, 100],
+            Self::Red => [255, 112, 122],
+            Self::Blue => [82, 163, 255],
         }
     }
 

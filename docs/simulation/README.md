@@ -19,6 +19,16 @@ The coordenates are translated to cylinder for wrap the noise around the witdh.
 
 ![elevations](./elevations.png)
 
+#### Tectonic Plates
+
+The tectonic plates define the mountains ranges and ocean trenches. This is done by the steps:
+
+1. **Find seeds in the map**: There is a number of seeds that are places in the maps. The seeds are the ID of each tectonic plate. The poisson disk sampling is too even for my taste, so I'm using my own logic that check points are picked random but at a min distance of each other.
+
+| **Custom** | **Poisson** |
+|------------|-------------|
+| ![custom](./custom_seeds.png) | ![poisson](./poisson_seeds.png) |
+
 ### Rendering
 
 The rendering is in charge of creating the images from the simulation. It converts the mesh data into points on images and then draws the hexes and the terrain.

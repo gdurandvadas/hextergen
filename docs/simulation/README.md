@@ -1,51 +1,55 @@
-# Simulation documentation
+# Simulation Documentation
 
-This document describes the steps and logic for the simulation for the map generation.
-The resulting world is a 2D image represented by a mesh of hexes. Each hexagon has a color representing a part of the terrain.
-The only way the hex represents the terrain type it's by its color. The colors are assigned by multiple factors resulting from the simulation, and they come from a pallette.
+## Overview
 
-### Mesh
+This document outlines the procedural map generation simulation process, which culminates in the creation of a two-dimensional image rendered as a mesh composed of hexagonal tiles. Each hexagonal tile's color corresponds to a terrain type, informed by various factors computed during the simulation and derived from a predefined color palette.
 
-The mesh contains all the geometric data of the hexes. The hexes are storaged in an 2D ndarray for performance. There is a get method for the hexe that help with type conversions.
-It also contains the pixel data of the hexes such as the displacement required to fit them into the screen, and the resolution. This helps with the possition of the hexes in the image when rendering.
+## Mesh Structure
 
-![mesh](./mesh.png)
+The mesh constitutes the foundational geometric representation of the terrain. We leverage a two-dimensional array (ndarray) for efficient storage and rapid access of hexagonal data. The `get` method facilitates type conversions and access to hex attributes.
 
-### Topography
+The mesh also encapsulates pixel information for each hex, including displacement vectors and resolution parameters. These details are essential for precise positioning of hexes on the rendering canvas, ensuring that the final image is a true representation of the simulated world.
 
-The topography defines the elevation and waters data of the map.
-It first assign elevations to all hexes with a octave noise using OpenSimplex. This returns an interesting texture of elevations, but it lacks complexity like mountain ranges.
-The coordenates are translated to cylinder for wrap the noise around the witdh.
+![Mesh Visualization](./mesh.png)
 
-![elevations](./elevations.png)
+## Topography
 
-#### Tectonic Plates
+The topographic aspect of the simulation determines the elevations and hydrography of the terrain. Initially, a noise algorithm provided by the OpenSimplex library generates a base texture for elevation. However, to introduce more complexity and natural features like mountain ranges, we implement additional modifications.
 
-The tectonic plates define the mountains ranges and ocean trenches. This is done by the steps:
+Coordinates undergo a cylindrical transformation to wrap the noise pattern around the map's width, creating a seamless transition at the edges.
 
-1. **Find seeds in the map**: There is a number of seeds that are places in the maps. The seeds are the ID of each tectonic plate. The poisson disk sampling is too even for my taste, so I'm using my own logic that check points are picked random but at a min distance of each other.
+![Elevation Texture](./elevations.png)
 
-| **Custom** | **Poisson** |
-|------------|-------------|
-| ![custom](./custom_seeds.png) | ![poisson](./poisson_seeds.png) |
+## Tectonic Plates
 
-### Rendering
+Tectonic plates are instrumental in shaping mountain ranges and oceanic trenches within the simulation. This is accomplished through the following steps:
 
-The rendering is in charge of creating the images from the simulation. It converts the mesh data into points on images and then draws the hexes and the terrain.
-Because maps can be very large images, the rendering is done by dividing the image into quadrants and rendering each one in parallel. This improves $+300\%$ the performance
+1. **Seed Placement**: The map's initiation begins with the strategic placement of seed points that act as identifiers for individual tectonic plates. We use a custom algorithm to distribute these seeds, ensuring a minimum distance between them. This method is preferred over Poisson disk sampling, which tends to distribute points too uniformly for the desired natural variability.
 
-#### Top Left
+   | **Custom Distribution** | **Poisson Distribution** |
+   | ----------------------- | ------------------------ |
+   | ![Custom Seed Placement](./custom_seeds.png) | ![Poisson Seed Placement](./poisson_seeds.png) |
 
-![top left](./../../_debug_top_left.png)
+## Rendering
 
-#### Top Right
+Rendering is the final phase, transforming simulation data into a visual representation. It involves converting mesh information into image coordinates and drawing hexes and terrain features.
 
-![top right](./../../_debug_top_right.png)
+To manage the demands of large image sizes, the rendering process is divided into quadrants. Each quadrant is processed in parallel, yielding a performance increase of over 300%.
 
-#### Bottom Left
+*Note: The following quadrant images are for debugging purposes and illustrate the segmented rendering approach.*
 
-![bottom left](./../../_debug_bottom_left.png)
+- **Top Left Quadrant**
+  
+  ![Top Left Quadrant](./../../_debug_top_left.png)
 
-#### Bottom Right
+- **Top Right Quadrant**
+  
+  ![Top Right Quadrant](./../../_debug_top_right.png)
 
-![bottom right](./../../_debug_bottom_right.png)
+- **Bottom Left Quadrant**
+  
+  ![Bottom Left Quadrant](./../../_debug_bottom_left.png)
+
+- **Bottom Right Quadrant**
+  
+  ![Bottom Right Quadrant](./../../_debug_bottom_right.png)

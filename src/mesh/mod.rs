@@ -113,14 +113,14 @@ pub struct Hex {
 ///
 /// let layout = HexLayout::default();
 /// let offset_mode = OffsetHexMode::OddColumns;
-/// let hex = Hex::new(Coord::new(0, 0), &layout, offset_mode, 10, 10);
+/// let hex = Hex::new(Coord::new(5, 5), &layout, offset_mode, 10, 10);
 ///
-/// println!("Axial Coordinates: {:?}", hex.axial);
-/// println!("Offset Coordinates: ({}, {})", hex.offset.x, hex.offset.y);
-/// println!("Center Position: ({}, {})", hex.center.x, hex.center.y);
+/// assert_eq!(hex.axial.y, 3, "Axial coordinates do not match");
+/// assert_eq!(hex.offset.x, 5, "Offset x-coordinate does not match");
+/// assert_eq!(hex.offset.y, 5, "Offset y-coordinate does not match");
+/// assert_eq!(hex.center.x, 7.5, "Center x-coordinate does not match");
+/// assert_eq!(hex.center.y, -9.526279, "Center y-coordinate does not match");
 /// ```
-///
-/// Note: Replace `hextergen` with the actual name of your crate.
 impl Hex {
     /// Creates a new `Hex` based on its offset coordinates, layout, offset mode, and the dimensions of the map.
     ///
@@ -338,7 +338,12 @@ pub struct Mesh {
 ///
 /// // Access a specific hex in the grid.
 /// let hex = mesh.get_hex(5, 5);
-/// println!("Hex at (5, 5): Axial Coordinates: {:?}", hex.axial);
+///
+/// assert_eq!(hex.axial.y, 5, "Axial coordinates do not match");
+/// assert_eq!(hex.offset.x, 5, "Offset x-coordinate does not match");
+/// assert_eq!(hex.offset.y, 5, "Offset y-coordinate does not match");
+/// assert_eq!(hex.center.x, 77.94228, "Center x-coordinate does not match");
+/// assert_eq!(hex.center.y, 75.0, "Center y-coordinate does not match");
 /// ```
 ///
 /// This example demonstrates how to create a `Mesh` with specific generation options and how to

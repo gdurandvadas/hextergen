@@ -21,7 +21,7 @@ type WrapAround = bool;
 /// assert_eq!(coord.x, 10);
 /// assert_eq!(coord.y, 20);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Coord {
     pub x: i32,
     pub y: i32,

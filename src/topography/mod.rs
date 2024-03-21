@@ -1,6 +1,8 @@
 use crate::mesh::Mesh;
 use crate::utils::noise::OctaveNoise;
+use crate::utils::queues;
 use crate::{cmd::GenerateOptions, mesh::Coord};
+use hashbrown::{HashMap, HashSet};
 use ndarray::Array2;
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
@@ -47,14 +49,6 @@ impl SeedsBuilder for Seeds {
             let x = rng.gen_range(2..options.width - 2);
             let y = rng.gen_range(2..options.height - 2);
             let candidate_hex = mesh.get_hex(x as i32, y as i32);
-            // if seeds.iter().all(|c: &(i32, i32)| {
-            //     mesh.get_hex(c., y)
-            //         .position
-            //         .distance_to(candidate_hex.position) as f32
-            //         > min_distance
-            // }) {
-            //     seeds.push(coord);
-            // }
             if seeds.iter().all(|c: &Coord| {
                 mesh.get_hex(c.x, c.y)
                     .axial
@@ -69,17 +63,65 @@ impl SeedsBuilder for Seeds {
     }
 }
 
+struct Plate {
+    direction: f32,
+    speed: f32,
+    area: Vec<Coord>,
+}
+
+struct Plates {
+    pub regions: HashMap<Coord, Plate>,
+    pub map: HashMap<Coord, Coord>,
+}
+
+impl Plates {
+    fn new(options: &GenerateOptions, mesh: &Mesh) -> Self {
+        let mut regions = HashMap::<Coord, Plate>::new();
+        let mut map = HashMap::<Coord, Coord>::new();
+        let mut queue = queues::FIRO::<(Coord, Coord)>::new(options.seed);
+        let mut visited = HashSet::<Coord>::new();
+
+        let seeds = Seeds::build(options, mesh);
+
+        for seed in seeds {
+            queue.enqueue((seed, seed));
+            map.insert(seed, seed);
+            regions.insert(
+                seed,
+                Plate {
+                    direction: 0.0,
+                    speed: 0.0,
+                    area: vec![seed],
+                },
+            );
+            visited.insert(seed);
+        }
+
+        while let Some((current, seed)) = queue.dequeue() {
+            for (neighbor, _wrapping) in &mesh.get_hex(current.x, current.y).neighbors {
+                if !visited.contains(neighbor) {
+                    map.insert(*neighbor, seed);
+                    regions.get_mut(&seed).unwrap().area.push(*neighbor);
+                    visited.insert(*neighbor);
+                    queue.enqueue((*neighbor, seed));
+                }
+            }
+        }
+
+        Self { regions, map }
+    }
+}
+
 pub struct Topography {
     pub elevations: Elevations,
-    pub seeds: Seeds,
+    pub plates: Plates,
 }
 
 impl Topography {
     pub fn new(options: &GenerateOptions, mesh: &Mesh) -> Self {
         let elevations = Elevations::build(options);
-        let seeds = Seeds::build(options, mesh);
-
-        Topography { elevations, seeds }
+        let plates = Plates::new(options, &mesh);
+        Topography { elevations, plates }
     }
 
     pub fn get_hex(&self, x: i32, y: i32) -> &f32 {

@@ -129,12 +129,12 @@ impl Quadrant {
                 (start.y..end.y).into_par_iter().map(move |y| {
                     let hex = mesh.get_hex(x, y);
                     let mut color = colors::Debug::Red.rgba();
-                    if topography.seeds.contains(&hex.offset) {
-                        color = colors::Debug::Green.rgba();
-                    } else {
-                        let elevation = topography.get_hex(x, y);
-                        color = colors::Debug::from_elevation(elevation);
-                    }
+                    // if topography.seeds.contains(&hex.offset) {
+                    //     color = colors::Debug::Green.rgba();
+                    // } else {
+                    //     let elevation = topography.get_hex(x, y);
+                    //     color = colors::Debug::from_elevation(elevation);
+                    // }
                     Polygon::new(hex, color, &displacement)
                 })
             })

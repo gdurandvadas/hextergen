@@ -30,6 +30,8 @@ Tectonic plates are instrumental in shaping mountain ranges and oceanic trenches
    | ----------------------- | ------------------------ |
    | ![Custom Seed Placement](./custom_seeds.png) | ![Poisson Seed Placement](./poisson_seeds.png) |
 
+2. **Grow Seeds**: Following seed placement, a growth algorithm expands each seed into a full-fledged tectonic plate using a breadth-first search mechanism. This expansion is facilitated by a specially designed random queue to model natural geological progression and form distinct tectonic plates on the map. Here plates get assigned a direction to represent its movement.
+
 ## Rendering
 
 Rendering is the final phase, transforming simulation data into a visual representation. It involves converting mesh information into image coordinates and drawing hexes and terrain features.

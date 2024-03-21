@@ -1,5 +1,6 @@
 use argh::FromArgs;
-use hexx::orientation;
+use hexx::{orientation, HexOrientation, OffsetHexMode};
+use crate::generate;
 
 const TITLE: &str = r"
 
@@ -78,7 +79,21 @@ impl Default for GenerateOptions {
             orientation: orientation::HexOrientation::Flat,
         }
     }
+}
 
+impl GenerateOptions {
+    pub fn offset_mode(&self) -> OffsetHexMode {
+        match self.orientation {
+            HexOrientation::Flat => match self.width % 2 == 0 {
+                true => OffsetHexMode::EvenColumns,
+                false => OffsetHexMode::OddColumns,
+            },
+            HexOrientation::Pointy => match self.height % 2 == 0 {
+                true => OffsetHexMode::EvenRows,
+                false => OffsetHexMode::OddRows,
+            },
+        }
+    }
 }
 
 pub fn run() {
@@ -108,7 +123,7 @@ pub fn run() {
                 }
             }
 
-            println!("Generating map with options: {:?}", generate_options);
+            generate::generate_map(&generate_options);
         }
     }
 }

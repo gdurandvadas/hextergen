@@ -1,6 +1,5 @@
 use crate::cmd::GenerateOptions;
 use hexx::{Hex as Hexx, HexLayout, OffsetHexMode, Vec2};
-use log::error;
 use ndarray::{Array2, Dim};
 use rayon::prelude::*;
 

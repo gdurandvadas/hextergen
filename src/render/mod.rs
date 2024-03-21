@@ -3,25 +3,21 @@ use self::colors::Colors;
 use crate::mesh::{Coord, Hex, Mesh, Screen};
 use hexx::Vec2;
 use image::{ImageBuffer, Rgba};
-use imageproc::drawing::{draw_filled_circle_mut, draw_polygon_mut};
+use imageproc::drawing::{draw_filled_circle_mut, draw_line_segment_mut, draw_polygon_mut};
 use imageproc::point::Point;
 use rayon::prelude::*;
 
 #[derive(Debug)]
 struct Polygon {
-    center: Point<i32>,
-    corners: [Point<i32>; 6],
+    center: Point<f32>,
+    corners: [Point<f32>; 6],
     color: Rgba<u8>,
 }
 
 impl Polygon {
     fn new(hex: &Hex, color: Rgba<u8>, displacement: &Point<f32>) -> Self {
-        let convert_point = |point: &Vec2| {
-            Point::new(
-                (point.x + displacement.x) as i32,
-                (point.y + displacement.y) as i32,
-            )
-        };
+        let convert_point =
+            |point: &Vec2| Point::new(point.x + displacement.x, point.y + displacement.y);
 
         let center = convert_point(&hex.center);
         let corners = [
@@ -38,6 +34,17 @@ impl Polygon {
             corners,
             color,
         }
+    }
+
+    fn corners(&self) -> Vec<Point<i32>> {
+        self.corners
+            .iter()
+            .map(|point| Point::new(point.x as i32, point.y as i32))
+            .collect()
+    }
+
+    fn center(&self) -> Point<i32> {
+        Point::new(self.center.x as i32, self.center.y as i32)
     }
 }
 
@@ -132,13 +139,24 @@ impl Quadrant {
             ImageBuffer::from_pixel(resolution.x as u32, resolution.y as u32, Rgba([0, 0, 0, 0]));
 
         polygons.iter().for_each(|polygon| {
-            draw_polygon_mut(&mut img, &polygon.corners, polygon.color);
-            draw_filled_circle_mut(
-                &mut img,
-                (polygon.center.x, polygon.center.y),
-                2,
-                Rgba([0, 0, 0, 120]),
-            );
+            draw_polygon_mut(&mut img, &polygon.corners(), polygon.color);
+            // draw_filled_circle_mut(
+            //     &mut img,
+            //     (polygon.center.x, polygon.center.y),
+            //     2,
+            //     Rgba([0, 0, 0, 120]),
+            // );
+
+            for i in 0..6 {
+                let corner_a = polygon.corners[i];
+                let corner_a = (corner_a.x, corner_a.y);
+
+                let next = (i + 1) % 6;
+                let corner_b = polygon.corners[next];
+                let corner_b = (corner_b.x, corner_b.y);
+
+                draw_line_segment_mut(&mut img, corner_a, corner_b, Rgba([0, 0, 0, 120]));
+            }
         });
 
         let file_name = format!("_debug_{}.png", self.to_string());

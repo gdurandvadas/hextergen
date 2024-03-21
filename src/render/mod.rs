@@ -1,6 +1,6 @@
 mod colors;
-use self::colors::Colors;
 use crate::mesh::{Coord, Hex, Mesh, Screen};
+use crate::topography::Topography;
 use hexx::Vec2;
 use image::{ImageBuffer, Rgba};
 use imageproc::drawing::{draw_filled_circle_mut, draw_line_segment_mut, draw_polygon_mut};
@@ -69,12 +69,9 @@ impl Quadrant {
 
     fn mesh(&self, center: &Coord, width: i32, height: i32) -> (Coord, Coord) {
         match self {
-            Quadrant::TopLeft => (Coord::new(0, 0), center.displace(1, 1)),
+            Quadrant::TopLeft => (Coord::new(0, 0), center.displace(0, 1)),
             Quadrant::TopRight => (Coord::new(center.x - 1, 0), Coord::new(width, center.y + 1)),
-            Quadrant::BottomLeft => (
-                Coord::new(0, center.y - 1),
-                Coord::new(center.x + 1, height),
-            ),
+            Quadrant::BottomLeft => (Coord::new(0, center.y - 1), Coord::new(center.x, height)),
             Quadrant::BottomRight => (
                 Coord::new(center.x - 1, center.y - 1),
                 Coord::new(width, height),
@@ -96,7 +93,7 @@ impl Quadrant {
     fn resolution(&self, center: &Vec2, screen: &Screen) -> Point<f32> {
         match self {
             Quadrant::TopLeft => {
-                let width = center.x + screen.displacement.x;
+                let width = center.x;
                 let height = center.y + screen.displacement.y;
                 Point::new(width, height)
             }
@@ -106,7 +103,7 @@ impl Quadrant {
                 Point::new(width, height)
             }
             Quadrant::BottomLeft => {
-                let width = center.x + screen.displacement.x;
+                let width = center.x;
                 let height = screen.resolution.y - center.y;
                 Point::new(width, height)
             }
@@ -118,7 +115,7 @@ impl Quadrant {
         }
     }
 
-    fn render(&self, mesh: &Mesh, center: &Hex) {
+    fn render(&self, mesh: &Mesh, topography: &Topography, center: &Hex) {
         let (start, end) = self.mesh(&center.offset, mesh.width as i32, mesh.height as i32);
         let relative_displacement = self.displacement(&center.center, &mesh.screen);
         let resolution = self.resolution(&center.center, &mesh.screen);
@@ -129,7 +126,8 @@ impl Quadrant {
             .flat_map(|x| {
                 (start.y..end.y).into_par_iter().map(move |y| {
                     let hex = mesh.get_hex(x, y);
-                    let color = colors::Debug::Green.rgba();
+                    let elevation = topography.get_hex(x, y);
+                    let color = colors::Debug::from_elevation(elevation);
                     Polygon::new(hex, color, &displacement)
                 })
             })
@@ -147,16 +145,16 @@ impl Quadrant {
             //     Rgba([0, 0, 0, 120]),
             // );
 
-            for i in 0..6 {
-                let corner_a = polygon.corners[i];
-                let corner_a = (corner_a.x, corner_a.y);
+            // for i in 0..6 {
+            //     let corner_a = polygon.corners[i];
+            //     let corner_a = (corner_a.x, corner_a.y);
 
-                let next = (i + 1) % 6;
-                let corner_b = polygon.corners[next];
-                let corner_b = (corner_b.x, corner_b.y);
+            //     let next = (i + 1) % 6;
+            //     let corner_b = polygon.corners[next];
+            //     let corner_b = (corner_b.x, corner_b.y);
 
-                draw_line_segment_mut(&mut img, corner_a, corner_b, Rgba([0, 0, 0, 120]));
-            }
+            //     draw_line_segment_mut(&mut img, corner_a, corner_b, Rgba([0, 0, 0, 120]));
+            // }
         });
 
         let file_name = format!("_debug_{}.png", self.to_string());
@@ -164,7 +162,7 @@ impl Quadrant {
     }
 }
 
-pub fn quadrants(mesh: &Mesh) {
+pub fn quadrants(mesh: &Mesh, topography: &Topography) {
     let center = mesh.get_hex((mesh.width / 2) as i32, (mesh.height / 2) as i32);
     let quadrants = [
         Quadrant::TopLeft,
@@ -173,6 +171,6 @@ pub fn quadrants(mesh: &Mesh) {
         Quadrant::BottomRight,
     ];
     quadrants.par_iter().for_each(|quadrant| {
-        quadrant.render(mesh, center);
+        quadrant.render(mesh, topography, center);
     });
 }

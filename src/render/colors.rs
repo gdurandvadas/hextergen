@@ -2,6 +2,10 @@ use image::Rgba;
 
 pub trait Colors {
     fn values(&self) -> [u8; 3];
+    fn alpha(&self, alpha: u8) -> Rgba<u8> {
+        let values = self.values();
+        Rgba([values[0], values[1], values[2], alpha])
+    }
     fn rgba(&self) -> Rgba<u8>;
 }
 
@@ -16,10 +20,10 @@ pub enum Debug {
 impl Colors for Debug {
     fn values(&self) -> [u8; 3] {
         match self {
-            Self::Brown => [177, 132, 80],
-            Self::Green => [65, 159, 75],
-            Self::Red => [181, 72, 81],
-            Self::Blue => [59, 105, 145],
+            Self::Brown => [221, 170, 122],
+            Self::Green => [115, 210, 116],
+            Self::Red => [224, 123, 130],
+            Self::Blue => [104, 154, 206],
         }
     }
 
@@ -30,6 +34,27 @@ impl Colors for Debug {
             Self::Green => Rgba([values[0], values[1], values[2], 255]),
             Self::Red => Rgba([values[0], values[1], values[2], 255]),
             Self::Blue => Rgba([values[0], values[1], values[2], 255]),
+        }
+    }
+}
+
+impl Debug {
+    pub fn from_elevation(elevation: &f32) -> Rgba<u8> {
+        match elevation > &0.0 {
+            true => {
+                // If the elevation is greater than 0, we return a brown color.
+                // The alpha value is proportional to the elevation, so higher elevations
+                // result in a more opaque color.
+                let alpha = ((elevation * 0.5 + 0.5) * 255.0) as u8;
+                Debug::Brown.alpha(alpha)
+            }
+            false => {
+                // If the elevation is less than or equal to 0, we return a blue color.
+                // The alpha value is inversely proportional to the elevation, so lower elevations
+                // (more negative) result in a more opaque color.
+                let alpha = 255u8 - ((-elevation * 0.5 + 0.5) * 255.0) as u8;
+                Debug::Blue.alpha(alpha)
+            }
         }
     }
 }

@@ -47,7 +47,7 @@ impl Coord {
     }
 
     /// Converts `Coord` to a `Dim<[usize; 2]>` for indexing into `ndarray` structures.
-    fn to_dim(&self) -> Dim<[usize; 2]> {
+    pub fn to_dim(&self) -> Dim<[usize; 2]> {
         Dim([self.x as usize, self.y as usize])
     }
 
@@ -76,6 +76,17 @@ impl Coord {
             x: self.x + dx,
             y: self.y + dy,
         }
+    }
+
+    pub fn to_cilinder(&self, width: i32, height: i32) -> (f32, f32, f32) {
+        let nx = self.x as f32 / width as f32;
+        let ny = self.y as f32 / height as f32;
+        let angle_x = 2.0 * std::f32::consts::PI * nx;
+        let cyl_x = angle_x.cos() / (2.0 * std::f32::consts::PI);
+        let cyl_y = angle_x.sin() / (2.0 * std::f32::consts::PI);
+        let cyl_z = ny;
+        (cyl_x, cyl_y, cyl_z)
+
     }
 }
 
@@ -370,6 +381,7 @@ impl Mesh {
         }
     }
 
+    // TODO set a trait for mesh manipulation
     pub fn get_hex(&self, x: i32, y: i32) -> &Hex {
         let coord = Coord::new(x, y);
         &self.hexes[coord.to_dim()]

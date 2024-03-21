@@ -11,6 +11,14 @@ It also contains the pixel data of the hexes such as the displacement required t
 
 ![mesh](./mesh.png)
 
+### Topography
+
+The topography defines the elevation and waters data of the map.
+It first assign elevations to all hexes with a octave noise using OpenSimplex. This returns an interesting texture of elevations, but it lacks complexity like mountain ranges.
+The coordenates are translated to cylinder for wrap the noise around the witdh.
+
+![elevations](./elevations.png)
+
 ### Rendering
 
 The rendering is in charge of creating the images from the simulation. It converts the mesh data into points on images and then draws the hexes and the terrain.

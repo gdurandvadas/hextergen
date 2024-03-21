@@ -6,6 +6,22 @@ use rayon::prelude::*;
 
 type WrapAround = bool;
 
+/// Represents a coordinate in a 2D grid.
+///
+/// `Coord` is used to store the position of hexagons in a hexagonal grid system.
+/// It holds two integer values, `x` and `y`, representing the coordinates on the grid.
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// use hextergen::mesh::Coord;
+///
+/// let coord = Coord::new(10, 20);
+/// assert_eq!(coord.x, 10);
+/// assert_eq!(coord.y, 20);
+/// ```
 #[derive(Clone, Copy)]
 pub struct Coord {
     pub x: i32,
@@ -13,11 +29,12 @@ pub struct Coord {
 }
 
 impl Coord {
+    /// Creates a new `Coord` with given x and y values.
     pub fn new(x: i32, y: i32) -> Coord {
         Coord { x, y }
     }
-    
 
+    /// Constructs a `Coord` from an array of two integers.
     fn from_array(arr: [i32; 2]) -> Coord {
         Coord {
             x: arr[0],
@@ -25,14 +42,17 @@ impl Coord {
         }
     }
 
+    /// Converts `Coord` into an array of two integers.
     fn to_array(&self) -> [i32; 2] {
         [self.x, self.y]
     }
 
+    /// Converts `Coord` to a `Dim<[usize; 2]>` for indexing into `ndarray` structures.
     fn to_dim(&self) -> Dim<[usize; 2]> {
         Dim([self.x as usize, self.y as usize])
     }
 
+    /// Wraps the x-coordinate around a given width, simulating a toroidal (wrap-around) grid.
     fn wrap_x(&self, width: i32) -> Self {
         Coord {
             x: (self.x + width) % width,
@@ -40,6 +60,18 @@ impl Coord {
         }
     }
 
+    /// Returns a new `Coord` displaced by `dx` and `dy` from the original.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use hextergen::mesh::Coord;
+    ///
+    /// let coord = Coord::new(10, 20);
+    /// let displaced = coord.displace(3, -2);
+    /// assert_eq!(displaced.x, 13);
+    /// assert_eq!(displaced.y, 18);
+    /// ```
     pub fn displace(&self, dx: i32, dy: i32) -> Self {
         Coord {
             x: self.x + dx,
@@ -56,8 +88,46 @@ pub struct Hex {
     pub neighbors: Vec<(Coord, WrapAround)>,
 }
 
+/// Represents a single hexagon in a hexagonal grid system.
+///
+/// Each `Hex` contains information about its position, both in axial (hexagonal) and offset (rectangular) coordinates,
+/// the physical center in 2D space, the positions of its corners, and its neighboring hexagons.
+///
+/// The axial coordinates (`axial`) use a 2D coordinate system where each axis is skewed by 60 degrees compared to traditional Cartesian coordinates.
+/// This is a common system for efficiently handling hexagonal grids.
+///
+/// # Fields
+/// - `axial`: The hex's position in axial coordinates.
+/// - `offset`: The hex's position in offset coordinates, which is more intuitive for grid layouts.
+/// - `center`: The physical center of the hex in 2D space.
+/// - `corners`: The positions of the hex's six corners.
+/// - `neighbors`: A vector of neighboring hexagons along with a flag indicating if the neighbor is wrapped around the grid edge.
+///
+/// # Examples
+///
+/// Creating a `Hex` and accessing its fields:
+///
+/// ```
+/// use hextergen::mesh::{Coord, Hex};
+/// use hexx::{Hex as Hexx,HexLayout, OffsetHexMode};
+///
+/// let layout = HexLayout::default();
+/// let offset_mode = OffsetHexMode::OddColumns;
+/// let hex = Hex::new(Coord::new(0, 0), &layout, offset_mode, 10, 10);
+///
+/// println!("Axial Coordinates: {:?}", hex.axial);
+/// println!("Offset Coordinates: ({}, {})", hex.offset.x, hex.offset.y);
+/// println!("Center Position: ({}, {})", hex.center.x, hex.center.y);
+/// ```
+///
+/// Note: Replace `hextergen` with the actual name of your crate.
 impl Hex {
-    fn new(
+    /// Creates a new `Hex` based on its offset coordinates, layout, offset mode, and the dimensions of the map.
+    ///
+    /// The `offset` parameter represents the hex's position in a grid, `layout` and `offset_mode` determine how
+    /// hexagons are laid out and converted between coordinate systems, and `map_width` and `map_height`
+    /// define the boundaries for neighbor calculation.
+    pub fn new(
         offset: Coord,
         layout: &HexLayout,
         offset_mode: OffsetHexMode,
@@ -97,7 +167,25 @@ impl Hex {
 
 type Hexes = Array2<Hex>;
 
+/// A trait for creating a grid of `Hex` structs, representing a hexagonal grid system.
+///
+/// This trait defines a method for generating a 2D array (`ndarray::Array2`) of `Hex`es based on the dimensions
+/// of the grid, the layout of the hexagons, and the offset mode. The `new_hexes` function utilizes parallel processing
+/// to efficiently create each hexagon in the grid.
 trait HexesBuilder {
+    /// Generates a new 2D array of `Hex` structs representing the hexagonal grid.
+    ///
+    /// This method constructs each `Hex` in the grid based on the provided grid dimensions,
+    /// hex layout, and offset mode. It leverages parallel processing to improve performance.
+    ///
+    /// # Parameters
+    /// - `map_width`: The width of the grid, in hexes.
+    /// - `map_height`: The height of the grid, in hexes.
+    /// - `layout`: The layout parameters for the hexes, defining their size and orientation.
+    /// - `offset_mode`: The offset mode (even or odd) that affects the calculation of hex positions.
+    ///
+    /// # Returns
+    /// A 2D array (`ndarray::Array2<Hex>`) representing the hexagonal grid.
     fn new_hexes(
         map_width: i32,
         map_height: i32,
@@ -107,6 +195,7 @@ trait HexesBuilder {
 }
 
 impl HexesBuilder for Hexes {
+    /// Implementation of `new_hexes` for generating the hexagonal grid.
     fn new_hexes(
         map_width: i32,
         map_height: i32,
@@ -122,14 +211,9 @@ impl HexesBuilder for Hexes {
                 })
             })
             .collect();
-        let hexes = Array2::from_shape_vec((map_width as usize, map_height as usize), builder);
-        match hexes {
-            Ok(h) => h,
-            Err(e) => {
-                error!("Error creating hexes: {}", e);
-                std::process::exit(1);
-            }
-        }
+
+        Array2::from_shape_vec((map_width as usize, map_height as usize), builder)
+            .expect("Error creating hexes: failed to match grid dimensions with hex count.")
     }
 }
 
@@ -138,7 +222,30 @@ pub struct Screen {
     pub resolution: Vec2,
 }
 
+/// Represents the screen space required to display a hexagonal grid.
+///
+/// This struct calculates and stores the minimum displacement and the resolution necessary to render
+/// the entire hexagonal grid within a graphical interface. The `displacement` represents the offset needed
+/// to ensure all hexagons are visible on screen, typically by shifting the grid into the positive coordinate space.
+/// The `resolution` determines the width and height required to encompass all hexagons.
+///
+/// # Fields
+/// - `displacement`: A `Vec2` representing the minimum x and y offsets required to render the entire grid positively.
+/// - `resolution`: A `Vec2` representing the total width and height required to display the grid.
 impl Screen {
+    /// Constructs a new `Screen` that determines the minimum screen space needed to display a hexagonal grid.
+    ///
+    /// This method calculates the bounds by processing each hexagon in the grid and its neighbors, finding the
+    /// minimum and maximum x and y coordinates. It then determines the displacement and resolution based on these
+    /// coordinates to ensure the entire grid can be rendered within a positive coordinate space.
+    ///
+    /// # Parameters
+    /// - `map_width`: The width of the grid, in hexes.
+    /// - `map_height`: The height of the grid, in hexes.
+    /// - `hexes`: A reference to the `Hexes` representing the hexagonal grid.
+    ///
+    /// # Returns
+    /// A `Screen` instance with calculated displacement and resolution for the grid.
     fn new(map_width: i32, map_height: i32, hexes: &Hexes) -> Self {
         let mut min_x = f32::INFINITY;
         let mut min_y = f32::INFINITY;
@@ -198,6 +305,45 @@ pub struct Mesh {
     pub height: i32,
 }
 
+/// Represents the entire hexagonal grid system.
+///
+/// `Mesh` encapsulates the hexagonal grid (`hexes`), the required screen space for rendering (`screen`),
+/// and the grid's dimensions. It provides a high-level interface for generating the grid based on specified
+/// dimensions and rendering parameters, and for accessing individual hexes within the grid.
+///
+/// # Fields
+/// - `hexes`: The hexagonal grid, represented as a 2D array of `Hex` structs.
+/// - `screen`: The calculated screen space required to display the grid, including displacement and resolution.
+/// - `width`: The width of the grid, in hexes.
+/// - `height`: The height of the grid, in hexes.
+///
+/// # Examples
+///
+/// Creating a `Mesh` and retrieving a specific `Hex`:
+///
+/// ```
+/// use hextergen::mesh::Mesh;
+/// use hextergen::cmd::GenerateOptions;
+///
+/// // Assuming `GenerateOptions` is a struct that defines parameters for grid generation,
+/// // such as grid dimensions, hex size, orientation, and offset mode.
+/// let options = GenerateOptions {
+///     width: 10,
+///     height: 10,
+///     ..Default::default()
+///     // Other necessary parameters...
+/// };
+///
+/// let mesh = Mesh::new(&options);
+///
+/// // Access a specific hex in the grid.
+/// let hex = mesh.get_hex(5, 5);
+/// println!("Hex at (5, 5): Axial Coordinates: {:?}", hex.axial);
+/// ```
+///
+/// This example demonstrates how to create a `Mesh` with specific generation options and how to
+/// retrieve a hex at a specific grid location. The `Mesh` struct simplifies the management of the
+/// hexagonal grid, allowing easy access to individual hexes and grid properties.
 impl Mesh {
     pub fn new(options: &GenerateOptions) -> Self {
         let width = options.width as i32;

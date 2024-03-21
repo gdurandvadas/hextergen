@@ -1,7 +1,4 @@
-mod cmd;
-mod mesh;
-mod generate;
-mod render;
+use hextergen::cmd;
 
 fn main() {
     cmd::run();

@@ -1,28 +1,22 @@
+use crate::cmd::GenerateOptions;
 use hexx::{Hex as Hexx, HexLayout, OffsetHexMode, Vec2};
 use log::error;
 use ndarray::{Array2, Dim};
 use rayon::prelude::*;
 
-use crate::cmd::GenerateOptions;
-
 type WrapAround = bool;
 
-struct Coord {
-    x: i32,
-    y: i32,
+#[derive(Clone, Copy)]
+pub struct Coord {
+    pub x: i32,
+    pub y: i32,
 }
 
 impl Coord {
-    fn new(x: i32, y: i32) -> Coord {
+    pub fn new(x: i32, y: i32) -> Coord {
         Coord { x, y }
     }
-
-    fn from_u32(x: u32, y: u32) -> Coord {
-        Coord {
-            x: x as i32,
-            y: y as i32,
-        }
-    }
+    
 
     fn from_array(arr: [i32; 2]) -> Coord {
         Coord {
@@ -45,14 +39,21 @@ impl Coord {
             y: self.y,
         }
     }
+
+    pub fn displace(&self, dx: i32, dy: i32) -> Self {
+        Coord {
+            x: self.x + dx,
+            y: self.y + dy,
+        }
+    }
 }
 
-struct Hex {
-    axial: Hexx,
-    offset: Coord,
-    center: Vec2,
-    corners: [Vec2; 6],
-    neighbors: Vec<(Coord, WrapAround)>,
+pub struct Hex {
+    pub axial: Hexx,
+    pub offset: Coord,
+    pub center: Vec2,
+    pub corners: [Vec2; 6],
+    pub neighbors: Vec<(Coord, WrapAround)>,
 }
 
 impl Hex {
@@ -60,8 +61,8 @@ impl Hex {
         offset: Coord,
         layout: &HexLayout,
         offset_mode: OffsetHexMode,
-        map_width: u32,
-        map_height: u32,
+        map_width: i32,
+        map_height: i32,
     ) -> Self {
         let axial = Hexx::from_offset_coordinates(offset.to_array(), offset_mode);
         let center = layout.hex_to_world_pos(axial);
@@ -72,9 +73,9 @@ impl Hex {
             .filter_map(|&n_axial| {
                 let n_offset = n_axial.to_offset_coordinates(offset_mode);
                 let n_coord = Coord::from_array(n_offset);
-                if n_coord.y >= 0 && n_coord.y < map_height as i32 {
-                    if n_coord.x < 0 || n_coord.x >= map_width as i32 {
-                        Some((n_coord.wrap_x(map_width as i32), true))
+                if n_coord.y >= 0 && n_coord.y < map_height {
+                    if n_coord.x < 0 || n_coord.x >= map_width {
+                        Some((n_coord.wrap_x(map_width), true))
                     } else {
                         Some((n_coord, false))
                     }
@@ -98,8 +99,8 @@ type Hexes = Array2<Hex>;
 
 trait HexesBuilder {
     fn new_hexes(
-        map_width: u32,
-        map_height: u32,
+        map_width: i32,
+        map_height: i32,
         layout: &HexLayout,
         offset_mode: OffsetHexMode,
     ) -> Hexes;
@@ -107,8 +108,8 @@ trait HexesBuilder {
 
 impl HexesBuilder for Hexes {
     fn new_hexes(
-        map_width: u32,
-        map_height: u32,
+        map_width: i32,
+        map_height: i32,
         layout: &HexLayout,
         offset_mode: OffsetHexMode,
     ) -> Hexes {
@@ -116,7 +117,7 @@ impl HexesBuilder for Hexes {
             .into_par_iter()
             .flat_map(|x| {
                 (0..map_height).into_par_iter().map(move |y| {
-                    let offset = Coord::from_u32(x, y);
+                    let offset = Coord::new(x, y);
                     Hex::new(offset, layout, offset_mode, map_width, map_height)
                 })
             })
@@ -132,13 +133,13 @@ impl HexesBuilder for Hexes {
     }
 }
 
-struct Screen {
-    displacement: Vec2,
-    resolution: Vec2,
+pub struct Screen {
+    pub displacement: Vec2,
+    pub resolution: Vec2,
 }
 
 impl Screen {
-    fn new(map_width: u32, map_height: u32, hexes: &Hexes) -> Self {
+    fn new(map_width: i32, map_height: i32, hexes: &Hexes) -> Self {
         let mut min_x = f32::INFINITY;
         let mut min_y = f32::INFINITY;
         let mut max_x = f32::NEG_INFINITY;
@@ -179,12 +180,12 @@ impl Screen {
 
         // Process last hex and its neighbours
         process_hex(
-            &Coord::new(map_width as i32 - 1, map_height as i32 - 1),
+            &Coord::new(map_width - 1, map_height - 1),
             &mut update_bounds,
         );
 
         Self {
-            displacement: Vec2::new(min_x, min_y),
+            displacement: Vec2::new(min_x.abs(), min_y.abs()),
             resolution: Vec2::new(max_x, max_y),
         }
     }
@@ -193,19 +194,34 @@ impl Screen {
 pub struct Mesh {
     pub hexes: Hexes,
     pub screen: Screen,
+    pub width: i32,
+    pub height: i32,
 }
 
 impl Mesh {
     pub fn new(options: &GenerateOptions) -> Self {
+        let width = options.width as i32;
+        let height = options.height as i32;
         let layout = HexLayout {
             invert_y: true,
             orientation: options.orientation,
+            hex_size: Vec2::new(10.0, 10.0),
             ..Default::default()
         };
         let offset_mode = options.offset_mode();
-        let hexes = Hexes::new_hexes(options.width, options.height, &layout, offset_mode);
-        let screen = Screen::new(options.width, options.height, &hexes);
+        let hexes = Hexes::new_hexes(width, height, &layout, offset_mode);
+        let screen = Screen::new(width, height, &hexes);
 
-        Self { hexes, screen }
+        Self {
+            hexes,
+            screen,
+            width,
+            height,
+        }
+    }
+
+    pub fn get_hex(&self, x: i32, y: i32) -> &Hex {
+        let coord = Coord::new(x, y);
+        &self.hexes[coord.to_dim()]
     }
 }

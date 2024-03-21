@@ -76,7 +76,7 @@ impl Default for GenerateOptions {
             seed: 0,
             width: 200,
             height: 160,
-            orientation: orientation::HexOrientation::Flat,
+            orientation: orientation::HexOrientation::Pointy,
         }
     }
 }

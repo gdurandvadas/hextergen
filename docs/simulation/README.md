@@ -38,7 +38,7 @@ The growth algorithm expands each seed into a full-fledged tectonic plate using 
 
 #### 3. Plate Borders
 
-To understand the relation between the plates and how they interact, we need to define their borders. This is done by going through all hexes in a plate's area and identifying if the neighbors of the hex are from the same plate or not. If they are not, we add the hex to the border list. The plates on the top and bottom edges of the map have a special edge border identifyed by the coordinate `(-1,-1)`.
+To understand the relation between the plates and how they interact, we need to define their borders. This is done by going through all hexes in a plate's area and identifying if the neighbors of the hex are from the same plate or not. If they are not, we add the hex to the border list. The plates on the top and bottom edges of the map have a special edge border identifyed by the coordinate `(-1,-1)` and they are always Divergent.
 
 ![Tectonic Plates Borders](./plates_border.png)
 
@@ -61,6 +61,11 @@ There are four type of interactions we can expect with this simulation:
 | ${\leftarrow}  \| {\leftarrow}$  | $B_m > A_m ? {\text{Convergent}} : {\text{Divergent}}$ |
 
 Where $A_m$ and $B_m$ are the magnitude (total hexes in area) of the plates.
+
+#### 4. Slopes
+
+The slopes are a list of arrays that go from the border hex of a plate to its seed. These array will affect the elevation of the hexes in the map.
+The slopes are a breath first search weighted by the distance to the seed. It also apply randomness on selecting the neighbor of the candidate to bring more natural look to the map.
 
 ## Rendering
 

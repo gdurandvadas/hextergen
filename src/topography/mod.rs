@@ -43,6 +43,7 @@ impl Topography {
         let elevations = Elevations::build(options);
         let mut plates = Plates::new(options, &mesh);
         plates.borders(&mesh);
+        plates.slopes(&mesh);
 
         Topography { elevations, plates }
     }

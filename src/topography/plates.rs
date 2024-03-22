@@ -3,9 +3,11 @@ use crate::utils::queues;
 use crate::{cmd::GenerateOptions, mesh::Coord};
 use hashbrown::{HashMap, HashSet};
 use hexx::Vec2;
+use rand::seq::SliceRandom;
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
 use rayon::prelude::*;
+use std::collections::VecDeque;
 use std::f32::consts::PI;
 
 type Seeds = Vec<Coord>;
@@ -41,11 +43,6 @@ impl SeedsBuilder for Seeds {
 
 const MAP_EDGE: Coord = Coord { x: -1, y: -1 };
 
-enum Slope {
-    Convergent,
-    Divergent,
-}
-
 enum Angle {
     In,
     Out,
@@ -61,7 +58,13 @@ impl Angle {
     }
 }
 
-impl Slope {
+#[derive(Clone, Copy)]
+enum InteractionVariant {
+    Convergent,
+    Divergent,
+}
+
+impl InteractionVariant {
     fn new(
         origin_center: &Hex,
         origin_direction: f32,
@@ -78,20 +81,20 @@ impl Slope {
 
         use Angle::*;
         match (origin_direction, other_direction) {
-            (In, In) => Slope::Convergent,
-            (Out, Out) => Slope::Convergent,
+            (In, In) => InteractionVariant::Convergent,
+            (Out, Out) => InteractionVariant::Convergent,
             (In, Out) => {
                 if origin_magnitude > other_magnitude {
-                    Slope::Convergent
+                    InteractionVariant::Convergent
                 } else {
-                    Slope::Divergent
+                    InteractionVariant::Divergent
                 }
             }
             (Out, In) => {
                 if other_magnitude > origin_magnitude {
-                    Slope::Convergent
+                    InteractionVariant::Convergent
                 } else {
-                    Slope::Divergent
+                    InteractionVariant::Divergent
                 }
             }
         }
@@ -102,8 +105,95 @@ impl Slope {
     }
 }
 
+struct Slope {
+    variant: InteractionVariant,
+    hexes: Vec<Coord>,
+}
+
+type Slopes = Vec<Slope>;
+
+trait SlopesBuilder {
+    fn build(seed: &Coord, interaction: &Interaction, mesh: &Mesh) -> Slopes;
+    fn wrap_distance(origin: &Vec2, other: &Vec2, width: i32, height: i32) -> f32;
+}
+
+impl SlopesBuilder for Slopes {
+    fn build(seed: &Coord, interaction: &Interaction, mesh: &Mesh) -> Slopes {
+        let variant = interaction.variant;
+        let seed_hex = mesh.get_hex(seed.x, seed.y);
+        interaction
+            .segment
+            .par_iter()
+            .map(|b_coord| {
+                let border_hex = mesh.get_hex(b_coord.x, b_coord.y);
+                let unique_seed = (b_coord.x + seed.x * b_coord.y + seed.y) as u64;
+
+                let mut rng = Pcg64Mcg::seed_from_u64(unique_seed);
+                let mut queue = VecDeque::<Coord>::new();
+                let mut visited = HashSet::<Coord>::new();
+                let mut hexes = Vec::<Coord>::new();
+
+                hexes.push(*b_coord);
+                queue.push_back(*b_coord);
+                visited.insert(*b_coord);
+
+                while let Some(current) = queue.pop_front() {
+                    let current_hex = mesh.get_hex(current.x, current.y);
+                    let current_to_seed = Self::wrap_distance(
+                        &current_hex.center,
+                        &seed_hex.center,
+                        mesh.width,
+                        mesh.height,
+                    );
+
+                    let mut neighbors = current_hex
+                        .neighbors
+                        .iter()
+                        .filter(|(n_coord, _)| !visited.contains(n_coord))
+                        .collect::<Vec<_>>();
+
+                    if neighbors.iter().any(|(n_coord, _)| n_coord == seed) {
+                        hexes.push(*seed);
+                        break;
+                    }
+
+                    neighbors.shuffle(&mut rng);
+
+                    for (n_coord, _) in neighbors {
+                        let neighbor_hex = mesh.get_hex(n_coord.x, n_coord.y);
+                        let neighbor_to_seed = Self::wrap_distance(
+                            &neighbor_hex.center,
+                            &seed_hex.center,
+                            mesh.width,
+                            mesh.height,
+                        );
+
+                        if neighbor_to_seed < current_to_seed {
+                            hexes.push(*n_coord);
+                            queue.push_back(*n_coord);
+                            visited.insert(*n_coord);
+                        }
+                    }
+                }
+
+                Slope { variant, hexes }
+            })
+            .collect()
+    }
+
+    fn wrap_distance(origin: &Vec2, other: &Vec2, width: i32, height: i32) -> f32 {
+        let direct_distance = origin.distance(*other);
+        let wrap_distance_x =
+            (width as f32 - (origin.x - other.x).abs()).min((origin.x - other.x).abs());
+        let wrap_distance_y =
+            (height as f32 - (origin.y - other.y).abs()).min((origin.y - other.y).abs());
+
+        direct_distance.min((wrap_distance_x.powi(2) + wrap_distance_y.powi(2)).sqrt())
+    }
+}
+
 pub struct Interaction {
-    pub slope: Slope,
+    pub variant: InteractionVariant,
     pub segment: Vec<Coord>,
 }
 
@@ -116,6 +206,7 @@ pub struct Plate {
 pub struct Plates {
     pub regions: HashMap<Coord, Plate>,
     pub map: HashMap<Coord, Coord>,
+    pub slopes: Slopes,
 }
 
 impl Plates {
@@ -153,7 +244,11 @@ impl Plates {
             }
         }
 
-        Self { regions, map }
+        Self {
+            regions,
+            map,
+            slopes: Vec::new(),
+        }
     }
 
     pub fn borders(&mut self, mesh: &Mesh) {
@@ -179,7 +274,7 @@ impl Plates {
                         .border
                         .entry(MAP_EDGE)
                         .or_insert(Interaction {
-                            slope: Slope::Divergent,
+                            variant: InteractionVariant::Divergent,
                             segment: Vec::new(),
                         })
                         .segment
@@ -200,7 +295,7 @@ impl Plates {
                                 .border
                                 .entry(n_p_coord)
                                 .or_insert({
-                                    let slope = Slope::new(
+                                    let slope = InteractionVariant::new(
                                         &mesh.get_hex(hex.x, hex.y),
                                         origin_direction,
                                         origin_magnitude,
@@ -209,7 +304,7 @@ impl Plates {
                                         other_magnitude,
                                     );
                                     Interaction {
-                                        slope,
+                                        variant: slope,
                                         segment: Vec::new(),
                                     }
                                 })
@@ -220,5 +315,21 @@ impl Plates {
                 }
             }
         })
+    }
+
+    pub fn slopes(&mut self, mesh: &Mesh) {
+        self.slopes = self
+            .regions
+            .par_iter()
+            .flat_map(|(p_coord, plate)| {
+                plate
+                    .border
+                    .iter()
+                    .flat_map(move |(_, interaction)| {
+                        Slopes::build(p_coord, interaction, mesh)
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
     }
 }

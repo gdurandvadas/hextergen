@@ -28,8 +28,8 @@ Tectonic plates are instrumental in shaping mountain ranges and oceanic trenches
 
 The map's initiation begins with the strategic placement of seed points that act as identifiers for individual tectonic plates. I initially wanted to use a Poisson Disk approach, but the result were too uniform for my taste, so I ended upp creating a simple logic that picks the seeds randomly ensuring aminimum distance between the points.
 
-| **Custom Distribution** | **Poisson Distribution** |
-| ----------------------- | ------------------------ |
+| **Custom Distribution**                      | **Poisson Distribution**                       |
+| -------------------------------------------- | ---------------------------------------------- |
 | ![Custom Seed Placement](./custom_seeds.png) | ![Poisson Seed Placement](./poisson_seeds.png) |
 
 #### 2. Plate Growth
@@ -38,7 +38,7 @@ The growth algorithm expands each seed into a full-fledged tectonic plate using 
 
 #### 3. Plate Borders
 
-To understand the relation between the plates and how they interact, we need to define their borders. This is done by going through all hexes in a plate's area and identifying if the neighbors of the hex are from the same plate or not. If they are not, we add the hex to the border list.
+To understand the relation between the plates and how they interact, we need to define their borders. This is done by going through all hexes in a plate's area and identifying if the neighbors of the hex are from the same plate or not. If they are not, we add the hex to the border list. The plates on the top and bottom edges of the map have a special edge border identifyed by the coordinate `(-1,-1)`.
 
 ![Tectonic Plates Borders](./plates_border.png)
 

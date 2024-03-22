@@ -38,7 +38,7 @@ impl SeedsBuilder for Seeds {
     }
 }
 
-const EDGE_BORDER: Coord = Coord { x: -1, y: -1 };
+const MAP_EDGE: Coord = Coord { x: -1, y: -1 };
 
 pub struct Plate {
     pub direction: f32,
@@ -93,21 +93,21 @@ impl Plates {
 
     pub fn borders(&mut self, mesh: &Mesh) {
         self.regions.par_iter_mut().for_each(|(p_coord, plate)| {
-            debug!("Processing plate: {:?}", p_coord);
             for hex in &plate.area {
                 let neighbors = &mesh.get_hex(hex.x, hex.y).neighbors;
                 if neighbors.len() < 6 {
                     plate
                         .border
-                        .entry(EDGE_BORDER)
+                        .entry(MAP_EDGE)
                         .or_insert(Vec::new())
                         .push(*hex);
                 } else {
                     neighbors.iter().for_each(|(neighbor, _wrapping)| {
-                        if self.map[neighbor] != *p_coord {
+                        let n_p_coord = self.map[neighbor];
+                        if n_p_coord != *p_coord {
                             plate
                                 .border
-                                .entry(*neighbor)
+                                .entry(n_p_coord)
                                 .or_insert(Vec::new())
                                 .push(*hex);
                         }

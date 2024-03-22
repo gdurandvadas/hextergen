@@ -132,17 +132,20 @@ impl Quadrant {
                     let elevation = topography.get_hex(x, y);
                     let mut color = colors::Debug::from_elevation(elevation);
 
-                    let p_coord = topography.plates.map.get(&coord).unwrap();
-                    if p_coord == &coord {
-                        color = colors::Debug::Green.rgba();
-                    } else {
-                        let plate = topography.plates.regions.get(p_coord).unwrap();
-                        plate.border.iter().for_each(|(_n_coord, border)| {
-                            if border.contains(&coord) {
-                                color = colors::Debug::Red.rgba();
-                            }
-                        });
+                    if coord == Coord::new(54, 50) {
+                        color = colors::Debug::Red.rgba();
                     }
+                    // let p_coord = topography.plates.map.get(&coord).unwrap();
+                    // if p_coord == &coord {
+                    //     color = colors::Debug::Green.rgba();
+                    // } else {
+                    //     let plate = topography.plates.regions.get(p_coord).unwrap();
+                    //     plate.border.iter().for_each(|(_n_coord, border)| {
+                    //         if border.contains(&coord) {
+                    //             color = colors::Debug::Red.rgba();
+                    //         }
+                    //     });
+                    // }
                     Polygon::new(hex, color, &displacement)
                 })
             })

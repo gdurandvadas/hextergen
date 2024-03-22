@@ -127,14 +127,22 @@ impl Quadrant {
             .into_par_iter()
             .flat_map(|x| {
                 (start.y..end.y).into_par_iter().map(move |y| {
+                    let coord = Coord::new(x, y);
                     let hex = mesh.get_hex(x, y);
-                    let mut color = colors::Debug::Red.rgba();
-                    // if topography.seeds.contains(&hex.offset) {
-                    //     color = colors::Debug::Green.rgba();
-                    // } else {
-                    //     let elevation = topography.get_hex(x, y);
-                    //     color = colors::Debug::from_elevation(elevation);
-                    // }
+                    let elevation = topography.get_hex(x, y);
+                    let mut color = colors::Debug::from_elevation(elevation);
+
+                    let p_coord = topography.plates.map.get(&coord).unwrap();
+                    if p_coord == &coord {
+                        color = colors::Debug::Green.rgba();
+                    } else {
+                        let plate = topography.plates.regions.get(p_coord).unwrap();
+                        plate.border.iter().for_each(|(_n_coord, border)| {
+                            if border.contains(&coord) {
+                                color = colors::Debug::Red.rgba();
+                            }
+                        });
+                    }
                     Polygon::new(hex, color, &displacement)
                 })
             })

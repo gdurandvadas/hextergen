@@ -63,13 +63,14 @@ impl SeedsBuilder for Seeds {
     }
 }
 
-struct Plate {
-    direction: f32,
-    speed: f32,
-    area: Vec<Coord>,
+pub struct Plate {
+    pub direction: f32,
+    pub speed: f32,
+    pub area: Vec<Coord>,
+    pub border: HashMap<Coord, Vec<Coord>>,
 }
 
-struct Plates {
+pub struct Plates {
     pub regions: HashMap<Coord, Plate>,
     pub map: HashMap<Coord, Coord>,
 }
@@ -80,6 +81,7 @@ impl Plates {
         let mut map = HashMap::<Coord, Coord>::new();
         let mut queue = queues::FIRO::<(Coord, Coord)>::new(options.seed);
         let mut visited = HashSet::<Coord>::new();
+        let mut rng = Pcg64Mcg::seed_from_u64(options.seed);
 
         let seeds = Seeds::build(options, mesh);
 
@@ -89,9 +91,10 @@ impl Plates {
             regions.insert(
                 seed,
                 Plate {
-                    direction: 0.0,
+                    direction: rng.gen_range(0.0..360.0),
                     speed: 0.0,
                     area: vec![seed],
+                    border: HashMap::new(),
                 },
             );
             visited.insert(seed);
@@ -110,6 +113,22 @@ impl Plates {
 
         Self { regions, map }
     }
+
+    fn borders(&mut self, mesh: &Mesh) {
+        self.regions.par_iter_mut().for_each(|(p_coord, plate)| {
+            for hex in &plate.area {
+                for (neighbor, _wrapping) in &mesh.get_hex(hex.x, hex.y).neighbors {
+                    if self.map[neighbor] != *p_coord {
+                        plate
+                            .border
+                            .entry(*neighbor)
+                            .or_insert(Vec::new())
+                            .push(*hex);
+                    }
+                }
+            }
+        })
+    }
 }
 
 pub struct Topography {
@@ -120,7 +139,8 @@ pub struct Topography {
 impl Topography {
     pub fn new(options: &GenerateOptions, mesh: &Mesh) -> Self {
         let elevations = Elevations::build(options);
-        let plates = Plates::new(options, &mesh);
+        let mut plates = Plates::new(options, &mesh);
+        plates.borders(&mesh);
         Topography { elevations, plates }
     }
 

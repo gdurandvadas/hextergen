@@ -6,7 +6,7 @@ This document outlines the procedural map generation simulation process, which c
 
 ## Mesh Structure
 
-The mesh constitutes the foundational geometric representation of the terrain. We leverage a two-dimensional array (ndarray) for efficient storage and rapid access of hexagonal data. The `get` method facilitates type conversions and access to hex attributes.
+The mesh constitutes the foundational geometric representation of the terrain. I leverage a two-dimensional array (ndarray) for efficient storage and rapid access of hexagonal data. The `get` method facilitates type conversions and access to hex attributes.
 
 The mesh also encapsulates pixel information for each hex, including displacement vectors and resolution parameters. These details are essential for precise positioning of hexes on the rendering canvas, ensuring that the final image is a true representation of the simulated world.
 
@@ -14,23 +14,34 @@ The mesh also encapsulates pixel information for each hex, including displacemen
 
 ## Topography
 
-The topographic aspect of the simulation determines the elevations and hydrography of the terrain. Initially, a noise algorithm provided by the OpenSimplex library generates a base texture for elevation. However, to introduce more complexity and natural features like mountain ranges, we implement additional modifications.
+The topographic aspect of the simulation determines the elevations and hydrography of the terrain. Initially, a noise algorithm provided by the OpenSimplex library generates a base texture for elevation, it's made more interesting by applying octaves to the noise calculation. However, to introduce more complexity and natural features, I implement additional processes to simulate tectonic plate movement and interaction.
 
-Coordinates undergo a cylindrical transformation to wrap the noise pattern around the map's width, creating a seamless transition at the edges.
+For the noise coordenates, I'm converting the offset `x` and `y` to a cilindrical projection. This way the left and right side of the map are continuous.
 
 ![Elevation Texture](./elevations.png)
 
-## Tectonic Plates
+### Tectonic Plates
 
-Tectonic plates are instrumental in shaping mountain ranges and oceanic trenches within the simulation. This is accomplished through the following steps:
+Tectonic plates are instrumental in shaping mountain ranges and oceanic trenches within the simulation. This is accomplished through the following steps.
 
-1. **Seed Placement**: The map's initiation begins with the strategic placement of seed points that act as identifiers for individual tectonic plates. We use a custom algorithm to distribute these seeds, ensuring a minimum distance between them. This method is preferred over Poisson disk sampling, which tends to distribute points too uniformly for the desired natural variability.
+#### 1. Seed Placement
 
-   | **Custom Distribution** | **Poisson Distribution** |
-   | ----------------------- | ------------------------ |
-   | ![Custom Seed Placement](./custom_seeds.png) | ![Poisson Seed Placement](./poisson_seeds.png) |
+The map's initiation begins with the strategic placement of seed points that act as identifiers for individual tectonic plates. I initially wanted to use a Poisson Disk approach, but the result were too uniform for my taste, so I ended upp creating a simple logic that picks the seeds randomly ensuring aminimum distance between the points.
 
-2. **Grow Seeds**: Following seed placement, a growth algorithm expands each seed into a full-fledged tectonic plate using a breadth-first search mechanism. This expansion is facilitated by a specially designed random queue to model natural geological progression and form distinct tectonic plates on the map. Here plates get assigned a direction to represent its movement.
+| **Custom Distribution** | **Poisson Distribution** |
+| ----------------------- | ------------------------ |
+| ![Custom Seed Placement](./custom_seeds.png) | ![Poisson Seed Placement](./poisson_seeds.png) |
+
+#### 2. Plate Growth
+
+The growth algorithm expands each seed into a full-fledged tectonic plate using a breadth-first search mechanism. This expansion is facilitated by a specially designed random queue to model natural geological progression and form distinct tectonic plates on the map. In this step, plates are also assigned a direction for the movement, which is just an random angle from $0º$ to $360º$.
+
+#### 3. Plate Borders
+
+To understand the relation between the plates and how they interact, we need to define their borders. This is done by going through all hexes in a plate's area and identifying if the neighbors of the hex are from the same plate or not. If they are not, we add the hex to the border list.
+
+![Tectonic Plates Borders](./plates_border.png)
+
 
 ## Rendering
 

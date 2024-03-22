@@ -44,23 +44,6 @@ impl Topography {
         let mut plates = Plates::new(options, &mesh);
         plates.borders(&mesh);
 
-        plates
-            .regions
-            .get(&Coord::new(54, 50))
-            .unwrap()
-            .border
-            .iter()
-            .for_each(|(coord, border)| {
-                debug!("{:?} {:?}", coord, border);
-            });
-
-        // for (p_coord, plate) in plates.regions.get(p_coord)..iter() {
-        //     if p_coord == &Coord::new(54, 50) {
-        //         for p in plate.border.keys() {
-        //             debug!("{:?}", p);
-        //         }
-        //     }
-        // }
         Topography { elevations, plates }
     }
 

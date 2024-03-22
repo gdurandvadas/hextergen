@@ -131,10 +131,6 @@ impl Quadrant {
                     let hex = mesh.get_hex(x, y);
                     let elevation = topography.get_hex(x, y);
                     let mut color = colors::Debug::from_elevation(elevation);
-
-                    if coord == Coord::new(54, 50) {
-                        color = colors::Debug::Red.rgba();
-                    }
                     // let p_coord = topography.plates.map.get(&coord).unwrap();
                     // if p_coord == &coord {
                     //     color = colors::Debug::Green.rgba();

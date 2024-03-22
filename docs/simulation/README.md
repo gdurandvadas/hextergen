@@ -42,6 +42,25 @@ To understand the relation between the plates and how they interact, we need to 
 
 ![Tectonic Plates Borders](./plates_border.png)
 
+To understand the interaction between the plates, we check the relative plate's direction between the neighbors.
+
+> **Note**: There are a lot of interaction types for tectonic plates in the real world. They depend on the plate varian (Continental or Oceanic), direction of movement, compression rate.
+> But for this simulation, I'm only focusing on interactions that bring visual apeal to the map.
+
+| **Visualization**                                   | **Description**                                                                                                            |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| ![Angle Between](./angle_between.png)               | Identify the delta between $0º$ and the angle between the plates' seeds.                                                   |
+| ![Rectified Directions](./rectified_directions.png) | We rotate the angle between to become our new $0º$, which help us to understand the relative direction between the plates. |
+
+There are four type of interactions we can expect with this simulation:
+| **Directions**                   | **Interaction**                                        |
+| -------------------------------- | ------------------------------------------------------ |
+| ${\rightarrow} \| {\leftarrow}$  | ${\text{Convergent}}$                                  |
+| ${\leftarrow}  \| {\rightarrow}$ | ${\text{Divergent}}$                                   |
+| ${\rightarrow} \| {\rightarrow}$ | $A_m > B_m ? {\text{Convergent}} : {\text{Divergent}}$ |
+| ${\leftarrow}  \| {\leftarrow}$  | $B_m > A_m ? {\text{Convergent}} : {\text{Divergent}}$ |
+
+Where $A_m$ and $B_m$ are the magnitude (total hexes in area) of the plates.
 
 ## Rendering
 

@@ -156,6 +156,13 @@ impl Quadrant {
             .slopes
             .iter()
             .for_each(|slope| {
+                // for slope in slopes.iter() {
+                //     for hex in slope.hexes.iter() {
+                //         let hex = mesh.get_hex(hex.x, hex.y);
+                //         let color = colors::Debug::Blue.rgba();
+                //         polygons.push(Polygon::new(hex, color, &displacement));
+                //     }
+                // }
                 for hex in slope.hexes.iter() {
                     let hex = mesh.get_hex(hex.x, hex.y);
                     let color = colors::Debug::Blue.rgba();

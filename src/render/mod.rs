@@ -147,7 +147,7 @@ impl Quadrant {
             })
             .collect();
 
-        topography.plates.slopes.get(3).unwrap().hexes.iter().for_each(|hex| {
+        topography.plates.slopes.get(4).unwrap().hexes.iter().for_each(|hex| {
             let hex = mesh.get_hex(hex.x, hex.y);
             let color = colors::Debug::Blue.rgba();
             polygons.push(Polygon::new(hex, color, &displacement));

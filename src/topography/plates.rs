@@ -134,68 +134,61 @@ impl SlopesBuilder for Slopes {
     // It uses an A* algorithm to find the shortest path between the two points
     // The path candidates are picked randomly for a more natural look
     fn build(seed: &Coord, interaction: &Interaction, mesh: &Mesh) -> Slopes {
-        let seed_hex = mesh.get_hex(seed.x, seed.y);
         interaction
             .segment
             .par_iter()
             .map(|b_coord| {
-                // let b_hex = mesh.get_hex(b_coord.x, b_coord.y);
-                // let current_to_border =
-                //     Self::wrap_distance(&seed_hex.center, &b_hex.center, mesh.width, mesh.height);
-                // let (x, y) = (seed.x * b_coord.x, seed.y * b_coord.y);
-                // let unique_seed = ((x as u64) << 32) | (y as u64);
-                // let mut rng = Pcg64Mcg::seed_from_u64(unique_seed);
-                // let mut queue = VecDeque::<Coord>::new();
-                // let mut visited = HashSet::<Coord>::new();
-                // let mut hexes = Vec::<Coord>::new();
+                let b_hex = mesh.get_hex(b_coord.x, b_coord.y);
+                let (x, y) = (seed.x * b_coord.x, seed.y * b_coord.y);
+                let unique_seed = ((x as u64) << 32) | (y as u64);
+                let mut rng = Pcg64Mcg::seed_from_u64(unique_seed);
+                let mut queue = VecDeque::<Coord>::new();
+                let mut visited = HashSet::<Coord>::new();
+                let mut hexes = Vec::<Coord>::new();
 
-                // hexes.push(*seed);
-                // queue.push_back(*seed);
-                // visited.insert(*seed);
+                hexes.push(*seed);
+                queue.push_back(*seed);
+                visited.insert(*seed);
 
-                // while let Some(current) = queue.pop_front() {
-                //     let current_hex = mesh.get_hex(current.x, current.y);
-                //     // let current_to_border = Self::wrap_distance(
-                //     //     &current_hex.center,
-                //     //     &seed_hex.center,
-                //     //     mesh.width,
-                //     //     mesh.height,
-                //     // );
+                while let Some(current) = queue.pop_front() {
+                    let current_hex = mesh.get_hex(current.x, current.y);
+                    let current_to_border = Self::wrap_distance(
+                        &current_hex.center,
+                        &b_hex.center,
+                        mesh.width,
+                        mesh.height,
+                    );
 
-                //     let mut neighbors = current_hex
-                //         .neighbors
-                //         .iter()
-                //         .filter(|(n_coord, _)| !visited.contains(n_coord))
-                //         .collect::<Vec<_>>();
+                    let mut neighbors = current_hex
+                        .neighbors
+                        .iter()
+                        .filter(|(n_coord, _)| !visited.contains(n_coord))
+                        .collect::<Vec<_>>();
 
-                //     if neighbors.iter().any(|(n_coord, _)| n_coord == b_coord) {
-                //         hexes.push(*b_coord);
-                //         break;
-                //     }
+                    if neighbors.iter().any(|(n_coord, _)| n_coord == b_coord) {
+                        hexes.push(*b_coord);
+                        break;
+                    }
 
-                //     neighbors.shuffle(&mut rng);
+                    neighbors.shuffle(&mut rng);
 
-                //     for (n_coord, _) in neighbors {
-                //         let neighbor_hex = mesh.get_hex(n_coord.x, n_coord.y);
-                //         let neighbor_to_border = Self::wrap_distance(
-                //             &neighbor_hex.center,
-                //             &b_hex.center,
-                //             mesh.width,
-                //             mesh.height,
-                //         );
+                    for (n_coord, _) in neighbors {
+                        let neighbor_hex = mesh.get_hex(n_coord.x, n_coord.y);
+                        let neighbor_to_border = Self::wrap_distance(
+                            &neighbor_hex.center,
+                            &b_hex.center,
+                            mesh.width,
+                            mesh.height,
+                        );
 
-                //         if neighbor_to_border < current_to_border {
-                //             hexes.push(*n_coord);
-                //             queue.push_back(*n_coord);
-                //             visited.insert(*n_coord);
-                //             break;
-                //         }
-                //     }
-                // }
-
-                let hex_seed = mesh.get_hex(seed.x, seed.y);
-                let hex_border = mesh.get_hex(b_coord.x, b_coord.y);
-                let hexes = hex_seed.axial.line_to(hex_border.axial).map(|c| mesh.axial_map.get(&c).unwrap().clone()).collect();
+                        if neighbor_to_border < current_to_border {
+                            hexes.push(*n_coord);
+                            queue.push_back(*n_coord);
+                            visited.insert(*n_coord);
+                            break;
+                        }
+                    }
+                }
 
                 Slope {
                     variant: interaction.variant,

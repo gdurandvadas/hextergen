@@ -1,4 +1,4 @@
-use log::{debug, info};
+use log::info;
 
 use crate::cmd::GenerateOptions;
 use crate::mesh::Mesh;

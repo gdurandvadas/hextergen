@@ -126,7 +126,7 @@ pub type Slopes = Vec<Slope>;
 
 trait SlopesBuilder {
     fn build(seed: &Coord, interaction: &Interaction, mesh: &Mesh) -> Slopes;
-    fn wrap_distance(origin: &Vec2, other: &Vec2, width: i32) -> f32;
+    fn wrap_distance(origin: &Vec2, other: &Vec2, resolution_x: f32) -> f32;
 }
 
 impl SlopesBuilder for Slopes {
@@ -152,8 +152,11 @@ impl SlopesBuilder for Slopes {
 
                 while let Some(current) = queue.pop_front() {
                     let current_hex = mesh.get_hex(current.x, current.y);
-                    let current_to_border =
-                        Self::wrap_distance(&current_hex.center, &b_hex.center, mesh.width);
+                    let current_to_border = Self::wrap_distance(
+                        &current_hex.center,
+                        &b_hex.center,
+                        mesh.screen.resolution.x,
+                    );
 
                     let mut neighbors = current_hex
                         .neighbors
@@ -168,12 +171,13 @@ impl SlopesBuilder for Slopes {
 
                     neighbors.shuffle(&mut rng);
 
-                    // ! FIX: At some point the difference between neighbor and current to boder
-                    // ! is more than required. This makes the slope to be incomplete
                     for (n_coord, _) in neighbors {
                         let neighbor_hex = mesh.get_hex(n_coord.x, n_coord.y);
-                        let neighbor_to_border =
-                            Self::wrap_distance(&neighbor_hex.center, &b_hex.center, mesh.width);
+                        let neighbor_to_border = Self::wrap_distance(
+                            &neighbor_hex.center,
+                            &b_hex.center,
+                            mesh.screen.resolution.x,
+                        );
                         if neighbor_to_border <= current_to_border {
                             hexes.push(*n_coord);
                             queue.push_back(*n_coord);
@@ -192,12 +196,12 @@ impl SlopesBuilder for Slopes {
     }
 
     // Calculate the distance between two points considering the wrapping of the map
-    fn wrap_distance(origin: &Vec2, other: &Vec2, wrap_size: i32) -> f32 {
+    fn wrap_distance(origin: &Vec2, other: &Vec2, resolution_x: f32) -> f32 {
         let direct_distance = origin.distance(*other);
         let wrap_distance_x =
-            (wrap_size as f32 - (origin.x - other.x).abs()).min((origin.x - other.x).abs());
+            (resolution_x - (origin.x - other.x).abs()).min((origin.x - other.x).abs());
         let wrap_distance_y =
-            (wrap_size as f32 - (origin.y - other.y).abs()).min((origin.y - other.y).abs());
+            (resolution_x - (origin.y - other.y).abs()).min((origin.y - other.y).abs());
 
         direct_distance.min((wrap_distance_x.powi(2) + wrap_distance_y.powi(2)).sqrt())
     }
@@ -350,6 +354,5 @@ impl Plates {
                 .flat_map(|(n_coord, interaction)| Slopes::build(p_coord, interaction, mesh))
                 .collect();
         });
-
     }
 }

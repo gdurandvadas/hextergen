@@ -15,6 +15,7 @@ pub enum Debug {
     Green,
     Red,
     Blue,
+    Yellow,
 }
 
 impl Colors for Debug {
@@ -24,6 +25,7 @@ impl Colors for Debug {
             Self::Green => [97, 255, 100],
             Self::Red => [255, 112, 122],
             Self::Blue => [82, 163, 255],
+            Self::Yellow => [217, 186, 82],
         }
     }
 
@@ -34,6 +36,7 @@ impl Colors for Debug {
             Self::Green => Rgba([values[0], values[1], values[2], 255]),
             Self::Red => Rgba([values[0], values[1], values[2], 255]),
             Self::Blue => Rgba([values[0], values[1], values[2], 255]),
+            Self::Yellow => Rgba([values[0], values[1], values[2], 255]),
         }
     }
 }

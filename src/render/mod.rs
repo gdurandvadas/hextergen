@@ -147,19 +147,6 @@ impl Quadrant {
             })
             .collect();
 
-        // topography
-        //     .plates
-        //     .slopes
-        //     .get(0..500)
-        //     .unwrap()
-        //     .iter()
-        //     .for_each(|slope| {
-        //         for hex in slope.hexes.iter() {
-        //             let hex = mesh.get_hex(hex.x, hex.y);
-        //             let color = colors::Debug::Blue.rgba();
-        //             polygons.push(Polygon::new(hex, color, &displacement));
-        //         }
-        //     });
 
         topography
             .plates

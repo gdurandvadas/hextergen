@@ -68,10 +68,32 @@ The slopes are a list of arrays that go from the border hex of a plate to its se
 The slopes are defined by an A* algorithm that goes from the seed of the hex to the border. The cost of moving from one hex to another is defined by the difference in distance between each and the border.
 
 
-| $i_I$                                | $i_{II}$                               | $i_{III}$                                | $i_{IV}$                               | $i_{n}$                              |
-| ------------------------------------ | -------------------------------------- | ---------------------------------------- | -------------------------------------- | ------------------------------------ |
-| ![Slope I](./simulation/slope_i.png) | ![Slope II](./simulation/slope_ii.png) | ![Slope III](./simulation/slope_iii.png) | ![Slope IV](./simulation/slope_iv.png) | ![Slope n](./simulation/slope_n.png) |
+| $i_I$                     | $i_{II}$                    | $i_{III}$                     | $i_{IV}$                    | $i_{n}$                   |
+| ------------------------- | --------------------------- | ----------------------------- | --------------------------- | ------------------------- |
+| ![Slope I](./slope_I.png) | ![Slope II](./slope_II.png) | ![Slope III](./slope_III.png) | ![Slope IV](./slope_IV.png) | ![Slope n](./slope_n.png) |
 
+#### 5. Elevation
+
+After establishing the initial terrain through a noise algorithm, the landscape undergoes further transformation influenced by tectonic activities.
+
+The type of interaction—whether convergent or divergent—affects each hex along a slope differently, altering its elevation with respect to its position from the seed to the border:
+
+- **Convergent Interaction:** Characterized by plates moving towards each other, this interaction causes elevation to increase along the slope. The elevation adjustment is calculated using an exponential-like function that scales with distance from the seed, defined as:
+
+$$
+{\text{elevation} = \left( \frac{2}{1 + e^{-k \cdot (\frac{i}{n} - 0.5)}} \right) - 1}
+$$
+
+- **Divergent Interaction:** Characterized by plates moving apart from each other, this interaction results in a decrease in elevation along the slope. Similar to convergent interactions, the adjustment is based on an exponential-like function, albeit inverted:
+
+$$
+{\text{elevation} = 1 - \left( \frac{2}{1 + e^{-k \cdot (\frac{i}{n} - 0.5)}} \right)}
+$$
+
+
+In these formulas, $i$ is the index of the hex in the slope (starting from 0 at the seed), $n$ is the total number of hexes in the slope, and $k$ is a constant determining the steepness of the elevation change. This design ensures that elevation changes more significantly closer to the border, emphasizing the impact of tectonic interactions on topography.
+
+The application of these formulas transforms the landscape, ensuring that elevations remain bounded between -1 and 1, thereby maintaining realistic terrain features. Through this process, the dynamic and complex nature of geological formations is captured, illustrating the significant influence of tectonic forces on the world's topography.
 
 ## Rendering
 

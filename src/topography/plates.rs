@@ -10,6 +10,7 @@ use rayon::prelude::*;
 use std::collections::VecDeque;
 use std::f32::consts::PI;
 
+// Seeds for the tectonic plates
 type Seeds = Vec<Coord>;
 
 trait SeedsBuilder {
@@ -17,6 +18,8 @@ trait SeedsBuilder {
 }
 
 impl SeedsBuilder for Seeds {
+    // Generate the seeds for the tectonic plates randomly picking points in the map
+    // The points must be placed at a minimum distance from each other
     fn build(options: &GenerateOptions, mesh: &Mesh) -> Seeds {
         let mut seeds: Seeds = Vec::new();
         let mut rng = Pcg64Mcg::seed_from_u64(options.seed);
@@ -41,8 +44,11 @@ impl SeedsBuilder for Seeds {
     }
 }
 
+// Special seed to identify the edge of the map
 const MAP_EDGE: Coord = Coord { x: -1, y: -1 };
 
+
+// Angle that identifies the direction of the movements
 enum Angle {
     In,
     Out,
@@ -58,6 +64,7 @@ impl Angle {
     }
 }
 
+// Categorize the angle relationship between two plates
 #[derive(Clone, Copy)]
 enum InteractionVariant {
     Convergent,
@@ -65,6 +72,7 @@ enum InteractionVariant {
 }
 
 impl InteractionVariant {
+    // Categorize the interaction between two plates
     fn new(
         origin_center: &Hex,
         origin_direction: f32,
@@ -100,11 +108,13 @@ impl InteractionVariant {
         }
     }
 
+    // Calculate the angle between two points
     fn angle_between(origin: &Vec2, other: &Vec2) -> f32 {
         ((other.y - origin.y).atan2(other.x - origin.x) * 180.0 / PI).rem_euclid(360.0)
     }
 }
 
+// Represents a slope as a list of hexes between the border hex and the seed hex
 struct Slope {
     variant: InteractionVariant,
     hexes: Vec<Coord>,
@@ -118,6 +128,9 @@ trait SlopesBuilder {
 }
 
 impl SlopesBuilder for Slopes {
+    // Generate the slopes between the border hex and the seed hex
+    // It uses an A* algorithm to find the shortest path between the two points
+    // The path candidates are picked randomly for a more natural look
     fn build(seed: &Coord, interaction: &Interaction, mesh: &Mesh) -> Slopes {
         let variant = interaction.variant;
         let seed_hex = mesh.get_hex(seed.x, seed.y);
@@ -125,7 +138,6 @@ impl SlopesBuilder for Slopes {
             .segment
             .par_iter()
             .map(|b_coord| {
-                let border_hex = mesh.get_hex(b_coord.x, b_coord.y);
                 let unique_seed = (b_coord.x + seed.x * b_coord.y + seed.y) as u64;
 
                 let mut rng = Pcg64Mcg::seed_from_u64(unique_seed);
@@ -181,6 +193,7 @@ impl SlopesBuilder for Slopes {
             .collect()
     }
 
+    // Calculate the distance between two points considering the wrapping of the map
     fn wrap_distance(origin: &Vec2, other: &Vec2, width: i32, height: i32) -> f32 {
         let direct_distance = origin.distance(*other);
         let wrap_distance_x =
@@ -192,17 +205,22 @@ impl SlopesBuilder for Slopes {
     }
 }
 
+// Contains the interaction between self plate and others
+// There is a segment of hexes that represent the border between the plates
+// The variant is applied to the whole segment
 pub struct Interaction {
     pub variant: InteractionVariant,
     pub segment: Vec<Coord>,
 }
 
+// Represents a tectonic plate
 pub struct Plate {
     pub direction: f32,
     pub area: Vec<Coord>,
     pub border: HashMap<Coord, Interaction>,
 }
 
+// Represents the tectonic plates
 pub struct Plates {
     pub regions: HashMap<Coord, Plate>,
     pub map: HashMap<Coord, Coord>,
@@ -210,6 +228,7 @@ pub struct Plates {
 }
 
 impl Plates {
+    // Generate the tectonic plates
     pub fn new(options: &GenerateOptions, mesh: &Mesh) -> Self {
         let mut regions = HashMap::<Coord, Plate>::new();
         let mut map = HashMap::<Coord, Coord>::new();
@@ -251,6 +270,13 @@ impl Plates {
         }
     }
 
+    // Identify the borders between the tectonic plates
+    // Each hex in the plate's area is checked for its neighbors, if any of them
+    // belongs to another plate, a border is created
+    // It uses the map to check which plate the neighbor belongs to
+    // It identifies the direction of the movements between the plates
+    // And categorizes the movements into an interaction
+    // TODO: After writhing the responsabilities of this code, it's clear that needs some refactor to split responsibilities
     pub fn borders(&mut self, mesh: &Mesh) {
         let directions: HashMap<Coord, f32> = self
             .regions
@@ -317,6 +343,7 @@ impl Plates {
         })
     }
 
+    // Generate the slopes between the border hex and the seed hex
     pub fn slopes(&mut self, mesh: &Mesh) {
         self.slopes = self
             .regions

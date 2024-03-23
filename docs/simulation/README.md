@@ -47,10 +47,10 @@ To understand the interaction between the plates, we check the relative plate's 
 > **Note**: There are a lot of interaction types for tectonic plates in the real world. They depend on the plate varian (Continental or Oceanic), direction of movement, compression rate.
 > But for this simulation, I'm only focusing on interactions that bring visual apeal to the map.
 
-| **Visualization**                                   | **Description**                                                                                                            |
-| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| ![Angle Between](./angle_between.png)               | Identify the delta between $0º$ and the angle between the plates' seeds.                                                   |
-| ![Rectified Directions](./rectified_directions.png) | We rotate the angle between to become our new $0º$, which help us to understand the relative direction between the plates. |
+| **Visualization**                                              | **Description**                                                                                                            |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| ![Angle Between](./simulation/angle_between.png)               | Identify the delta between $0º$ and the angle between the plates' seeds.                                                   |
+| ![Rectified Directions](./simulation/rectified_directions.png) | We rotate the angle between to become our new $0º$, which help us to understand the relative direction between the plates. |
 
 There are four type of interactions we can expect with this simulation:
 | **Directions**                   | **Interaction**                                        |
@@ -68,9 +68,9 @@ The slopes are a list of arrays that go from the border hex of a plate to its se
 The slopes are defined by an A* algorithm that goes from the seed of the hex to the border. The cost of moving from one hex to another is defined by the difference in distance between each and the border.
 
 
-| $i_I$                     | $i_{II}$                    | $i_{III}$                     | $i_{IV}$                    | $i_{n}$                   |
-| ------------------------- | --------------------------- | ----------------------------- | --------------------------- | ------------------------- |
-| ![Slope I](./slope_i.png) | ![Slope II](./slope_ii.png) | ![Slope III](./slope_iii.png) | ![Slope IV](./slope_iv.png) | ![Slope n](./slope_n.png) |
+| $i_I$                                | $i_{II}$                               | $i_{III}$                                | $i_{IV}$                               | $i_{n}$                              |
+| ------------------------------------ | -------------------------------------- | ---------------------------------------- | -------------------------------------- | ------------------------------------ |
+| ![Slope I](./simulation/slope_i.png) | ![Slope II](./simulation/slope_ii.png) | ![Slope III](./simulation/slope_iii.png) | ![Slope IV](./simulation/slope_iv.png) | ![Slope n](./simulation/slope_n.png) |
 
 
 ## Rendering

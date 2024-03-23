@@ -126,7 +126,7 @@ pub type Slopes = Vec<Slope>;
 
 trait SlopesBuilder {
     fn build(seed: &Coord, interaction: &Interaction, mesh: &Mesh) -> Slopes;
-    fn wrap_distance(origin: &Vec2, other: &Vec2, width: i32, height: i32) -> f32;
+    fn wrap_distance(origin: &Vec2, other: &Vec2, width: i32) -> f32;
 }
 
 impl SlopesBuilder for Slopes {
@@ -152,12 +152,8 @@ impl SlopesBuilder for Slopes {
 
                 while let Some(current) = queue.pop_front() {
                     let current_hex = mesh.get_hex(current.x, current.y);
-                    let current_to_border = Self::wrap_distance(
-                        &current_hex.center,
-                        &b_hex.center,
-                        mesh.width,
-                        mesh.height,
-                    );
+                    let current_to_border =
+                        Self::wrap_distance(&current_hex.center, &b_hex.center, mesh.width);
 
                     let mut neighbors = current_hex
                         .neighbors
@@ -172,16 +168,13 @@ impl SlopesBuilder for Slopes {
 
                     neighbors.shuffle(&mut rng);
 
+                    // ! FIX: At some point the difference between neighbor and current to boder
+                    // ! is more than required. This makes the slope to be incomplete
                     for (n_coord, _) in neighbors {
                         let neighbor_hex = mesh.get_hex(n_coord.x, n_coord.y);
-                        let neighbor_to_border = Self::wrap_distance(
-                            &neighbor_hex.center,
-                            &b_hex.center,
-                            mesh.width,
-                            mesh.height,
-                        );
-
-                        if neighbor_to_border < current_to_border {
+                        let neighbor_to_border =
+                            Self::wrap_distance(&neighbor_hex.center, &b_hex.center, mesh.width);
+                        if neighbor_to_border <= current_to_border {
                             hexes.push(*n_coord);
                             queue.push_back(*n_coord);
                             visited.insert(*n_coord);
@@ -199,12 +192,12 @@ impl SlopesBuilder for Slopes {
     }
 
     // Calculate the distance between two points considering the wrapping of the map
-    fn wrap_distance(origin: &Vec2, other: &Vec2, width: i32, height: i32) -> f32 {
+    fn wrap_distance(origin: &Vec2, other: &Vec2, wrap_size: i32) -> f32 {
         let direct_distance = origin.distance(*other);
         let wrap_distance_x =
-            (width as f32 - (origin.x - other.x).abs()).min((origin.x - other.x).abs());
+            (wrap_size as f32 - (origin.x - other.x).abs()).min((origin.x - other.x).abs());
         let wrap_distance_y =
-            (height as f32 - (origin.y - other.y).abs()).min((origin.y - other.y).abs());
+            (wrap_size as f32 - (origin.y - other.y).abs()).min((origin.y - other.y).abs());
 
         direct_distance.min((wrap_distance_x.powi(2) + wrap_distance_y.powi(2)).sqrt())
     }
@@ -225,6 +218,7 @@ pub struct Plate {
     pub direction: f32,
     pub area: Vec<Coord>,
     pub border: HashMap<Coord, Interaction>,
+    pub slopes: Slopes,
 }
 
 // Represents the tectonic plates
@@ -232,7 +226,6 @@ pub struct Plate {
 pub struct Plates {
     pub regions: HashMap<Coord, Plate>,
     pub map: HashMap<Coord, Coord>,
-    pub slopes: Slopes,
 }
 
 impl Plates {
@@ -255,6 +248,7 @@ impl Plates {
                     direction: rng.gen_range(0.0..360.0),
                     area: vec![seed],
                     border: HashMap::new(),
+                    slopes: Vec::new(),
                 },
             );
             visited.insert(seed);
@@ -271,11 +265,7 @@ impl Plates {
             }
         }
 
-        Self {
-            regions,
-            map,
-            slopes: Vec::new(),
-        }
+        Self { regions, map }
     }
 
     // Identify the borders between the tectonic plates
@@ -353,16 +343,13 @@ impl Plates {
 
     // Generate the slopes between the border hex and the seed hex
     pub fn slopes(&mut self, mesh: &Mesh) {
-        self.slopes = self
-            .regions
-            .par_iter()
-            .flat_map(|(p_coord, plate)| {
-                plate
-                    .border
-                    .iter()
-                    .flat_map(move |(_, interaction)| Slopes::build(p_coord, interaction, mesh))
-                    .collect::<Vec<_>>()
-            })
-            .collect::<Vec<_>>();
+        self.regions.par_iter_mut().for_each(|(p_coord, plate)| {
+            plate.slopes = plate
+                .border
+                .par_iter()
+                .flat_map(|(n_coord, interaction)| Slopes::build(p_coord, interaction, mesh))
+                .collect();
+        });
+
     }
 }

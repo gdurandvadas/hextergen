@@ -3,7 +3,6 @@ mod plates;
 use crate::mesh::Mesh;
 use crate::utils::noise::OctaveNoise;
 use crate::{cmd::GenerateOptions, mesh::Coord};
-use log::debug;
 use ndarray::Array2;
 use plates::Plates;
 use rayon::prelude::*;

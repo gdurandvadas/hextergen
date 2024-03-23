@@ -67,6 +67,10 @@ Where $A_m$ and $B_m$ are the magnitude (total hexes in area) of the plates.
 The slopes are a list of arrays that go from the border hex of a plate to its seed. These array will affect the elevation of the hexes in the map.
 The slopes are defined by an A* algorithm that goes from the border hex to the seed of the plate. The cost of moving from one hex to another is defined by the difference in distance between each and the seed.
 
+| **Iteration I**                                | **Iteration II**                               | **Iteration III**                              | **Iteration IV**                               |
+| ---------------------------------------------- | ---------------------------------------------- | ---------------------------------------------- | ---------------------------------------------- |
+
+
 ## Rendering
 
 Rendering is the final phase, transforming simulation data into a visual representation. It involves converting mesh information into image coordinates and drawing hexes and terrain features.

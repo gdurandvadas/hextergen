@@ -147,11 +147,34 @@ impl Quadrant {
             })
             .collect();
 
-        topography.plates.slopes.get(4).unwrap().hexes.iter().for_each(|hex| {
-            let hex = mesh.get_hex(hex.x, hex.y);
-            let color = colors::Debug::Blue.rgba();
-            polygons.push(Polygon::new(hex, color, &displacement));
-        });
+        // topography
+        //     .plates
+        //     .slopes
+        //     .get(0..500)
+        //     .unwrap()
+        //     .iter()
+        //     .for_each(|slope| {
+        //         for hex in slope.hexes.iter() {
+        //             let hex = mesh.get_hex(hex.x, hex.y);
+        //             let color = colors::Debug::Blue.rgba();
+        //             polygons.push(Polygon::new(hex, color, &displacement));
+        //         }
+        //     });
+
+        topography
+            .plates
+            .regions
+            .get(&Coord::new(54, 50))
+            .unwrap()
+            .slopes
+            .iter()
+            .for_each(|slope| {
+                for hex in slope.hexes.iter() {
+                    let hex = mesh.get_hex(hex.x, hex.y);
+                    let color = colors::Debug::Blue.rgba();
+                    polygons.push(Polygon::new(hex, color, &displacement));
+                }
+            });
 
         let mut img =
             ImageBuffer::from_pixel(resolution.x as u32, resolution.y as u32, Rgba([0, 0, 0, 0]));

@@ -1,6 +1,8 @@
-use crate::mesh::{Hex, Mesh};
-use crate::utils::queues;
-use crate::{cmd::GenerateOptions, mesh::Coord};
+use crate::{
+    cmd::GenerateOptions,
+    mesh::{Coord, Hex, Mesh},
+    utils::queues,
+};
 use hashbrown::{HashMap, HashSet};
 use hexx::Vec2;
 use rand::seq::SliceRandom;
@@ -47,7 +49,6 @@ impl SeedsBuilder for Seeds {
 // Special seed to identify the edge of the map
 const MAP_EDGE: Coord = Coord { x: -1, y: -1 };
 
-
 // Angle that identifies the direction of the movements
 enum Angle {
     In,
@@ -65,7 +66,7 @@ impl Angle {
 }
 
 // Categorize the angle relationship between two plates
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 enum InteractionVariant {
     Convergent,
     Divergent,
@@ -115,12 +116,13 @@ impl InteractionVariant {
 }
 
 // Represents a slope as a list of hexes between the border hex and the seed hex
-struct Slope {
-    variant: InteractionVariant,
-    hexes: Vec<Coord>,
+#[derive(Debug)]
+pub struct Slope {
+    pub variant: InteractionVariant,
+    pub hexes: Vec<Coord>,
 }
 
-type Slopes = Vec<Slope>;
+pub type Slopes = Vec<Slope>;
 
 trait SlopesBuilder {
     fn build(seed: &Coord, interaction: &Interaction, mesh: &Mesh) -> Slopes;
@@ -132,63 +134,73 @@ impl SlopesBuilder for Slopes {
     // It uses an A* algorithm to find the shortest path between the two points
     // The path candidates are picked randomly for a more natural look
     fn build(seed: &Coord, interaction: &Interaction, mesh: &Mesh) -> Slopes {
-        let variant = interaction.variant;
         let seed_hex = mesh.get_hex(seed.x, seed.y);
         interaction
             .segment
             .par_iter()
             .map(|b_coord| {
-                let unique_seed = (b_coord.x + seed.x * b_coord.y + seed.y) as u64;
+                // let b_hex = mesh.get_hex(b_coord.x, b_coord.y);
+                // let current_to_border =
+                //     Self::wrap_distance(&seed_hex.center, &b_hex.center, mesh.width, mesh.height);
+                // let (x, y) = (seed.x * b_coord.x, seed.y * b_coord.y);
+                // let unique_seed = ((x as u64) << 32) | (y as u64);
+                // let mut rng = Pcg64Mcg::seed_from_u64(unique_seed);
+                // let mut queue = VecDeque::<Coord>::new();
+                // let mut visited = HashSet::<Coord>::new();
+                // let mut hexes = Vec::<Coord>::new();
 
-                let mut rng = Pcg64Mcg::seed_from_u64(unique_seed);
-                let mut queue = VecDeque::<Coord>::new();
-                let mut visited = HashSet::<Coord>::new();
-                let mut hexes = Vec::<Coord>::new();
+                // hexes.push(*seed);
+                // queue.push_back(*seed);
+                // visited.insert(*seed);
 
-                hexes.push(*b_coord);
-                queue.push_back(*b_coord);
-                visited.insert(*b_coord);
+                // while let Some(current) = queue.pop_front() {
+                //     let current_hex = mesh.get_hex(current.x, current.y);
+                //     // let current_to_border = Self::wrap_distance(
+                //     //     &current_hex.center,
+                //     //     &seed_hex.center,
+                //     //     mesh.width,
+                //     //     mesh.height,
+                //     // );
 
-                while let Some(current) = queue.pop_front() {
-                    let current_hex = mesh.get_hex(current.x, current.y);
-                    let current_to_seed = Self::wrap_distance(
-                        &current_hex.center,
-                        &seed_hex.center,
-                        mesh.width,
-                        mesh.height,
-                    );
+                //     let mut neighbors = current_hex
+                //         .neighbors
+                //         .iter()
+                //         .filter(|(n_coord, _)| !visited.contains(n_coord))
+                //         .collect::<Vec<_>>();
 
-                    let mut neighbors = current_hex
-                        .neighbors
-                        .iter()
-                        .filter(|(n_coord, _)| !visited.contains(n_coord))
-                        .collect::<Vec<_>>();
+                //     if neighbors.iter().any(|(n_coord, _)| n_coord == b_coord) {
+                //         hexes.push(*b_coord);
+                //         break;
+                //     }
 
-                    if neighbors.iter().any(|(n_coord, _)| n_coord == seed) {
-                        hexes.push(*seed);
-                        break;
-                    }
+                //     neighbors.shuffle(&mut rng);
 
-                    neighbors.shuffle(&mut rng);
+                //     for (n_coord, _) in neighbors {
+                //         let neighbor_hex = mesh.get_hex(n_coord.x, n_coord.y);
+                //         let neighbor_to_border = Self::wrap_distance(
+                //             &neighbor_hex.center,
+                //             &b_hex.center,
+                //             mesh.width,
+                //             mesh.height,
+                //         );
 
-                    for (n_coord, _) in neighbors {
-                        let neighbor_hex = mesh.get_hex(n_coord.x, n_coord.y);
-                        let neighbor_to_seed = Self::wrap_distance(
-                            &neighbor_hex.center,
-                            &seed_hex.center,
-                            mesh.width,
-                            mesh.height,
-                        );
+                //         if neighbor_to_border < current_to_border {
+                //             hexes.push(*n_coord);
+                //             queue.push_back(*n_coord);
+                //             visited.insert(*n_coord);
+                //             break;
+                //         }
+                //     }
+                // }
 
-                        if neighbor_to_seed < current_to_seed {
-                            hexes.push(*n_coord);
-                            queue.push_back(*n_coord);
-                            visited.insert(*n_coord);
-                        }
-                    }
+                let hex_seed = mesh.get_hex(seed.x, seed.y);
+                let hex_border = mesh.get_hex(b_coord.x, b_coord.y);
+                let hexes = hex_seed.axial.line_to(hex_border.axial).map(|c| mesh.axial_map.get(&c).unwrap().clone()).collect();
+
+                Slope {
+                    variant: interaction.variant,
+                    hexes,
                 }
-
-                Slope { variant, hexes }
             })
             .collect()
     }
@@ -208,12 +220,14 @@ impl SlopesBuilder for Slopes {
 // Contains the interaction between self plate and others
 // There is a segment of hexes that represent the border between the plates
 // The variant is applied to the whole segment
+#[derive(Debug)]
 pub struct Interaction {
     pub variant: InteractionVariant,
     pub segment: Vec<Coord>,
 }
 
 // Represents a tectonic plate
+#[derive(Debug)]
 pub struct Plate {
     pub direction: f32,
     pub area: Vec<Coord>,
@@ -221,6 +235,7 @@ pub struct Plate {
 }
 
 // Represents the tectonic plates
+#[derive(Debug)]
 pub struct Plates {
     pub regions: HashMap<Coord, Plate>,
     pub map: HashMap<Coord, Coord>,
@@ -352,9 +367,7 @@ impl Plates {
                 plate
                     .border
                     .iter()
-                    .flat_map(move |(_, interaction)| {
-                        Slopes::build(p_coord, interaction, mesh)
-                    })
+                    .flat_map(move |(_, interaction)| Slopes::build(p_coord, interaction, mesh))
                     .collect::<Vec<_>>()
             })
             .collect::<Vec<_>>();

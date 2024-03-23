@@ -123,7 +123,7 @@ impl Quadrant {
         let resolution = self.resolution(&center.center, &mesh.screen);
         let displacement = Point::new(relative_displacement.x, relative_displacement.y);
 
-        let polygons: Polygons = (start.x..end.x)
+        let mut polygons: Polygons = (start.x..end.x)
             .into_par_iter()
             .flat_map(|x| {
                 (start.y..end.y).into_par_iter().map(move |y| {
@@ -131,21 +131,27 @@ impl Quadrant {
                     let hex = mesh.get_hex(x, y);
                     let elevation = topography.get_hex(x, y);
                     let mut color = colors::Debug::from_elevation(elevation);
-                    // let p_coord = topography.plates.map.get(&coord).unwrap();
-                    // if p_coord == &coord {
-                    //     color = colors::Debug::Green.rgba();
-                    // } else {
-                    //     let plate = topography.plates.regions.get(p_coord).unwrap();
-                    //     plate.border.iter().for_each(|(_n_coord, border)| {
-                    //         if border.contains(&coord) {
-                    //             color = colors::Debug::Red.rgba();
-                    //         }
-                    //     });
-                    // }
+                    let p_coord = topography.plates.map.get(&coord).unwrap();
+                    if p_coord == &coord {
+                        color = colors::Debug::Green.rgba();
+                    } else {
+                        let plate = topography.plates.regions.get(p_coord).unwrap();
+                        plate.border.iter().for_each(|(_n_coord, interaction)| {
+                            if interaction.segment.contains(&coord) {
+                                color = colors::Debug::Red.rgba();
+                            }
+                        });
+                    }
                     Polygon::new(hex, color, &displacement)
                 })
             })
             .collect();
+
+        topography.plates.slopes.get(3).unwrap().hexes.iter().for_each(|hex| {
+            let hex = mesh.get_hex(hex.x, hex.y);
+            let color = colors::Debug::Blue.rgba();
+            polygons.push(Polygon::new(hex, color, &displacement));
+        });
 
         let mut img =
             ImageBuffer::from_pixel(resolution.x as u32, resolution.y as u32, Rgba([0, 0, 0, 0]));

@@ -1,4 +1,5 @@
 use crate::cmd::GenerateOptions;
+use hashbrown::HashMap;
 use hexx::{Hex as Hexx, HexLayout, OffsetHexMode, Vec2};
 use ndarray::{Array2, Dim};
 use rayon::prelude::*;
@@ -200,7 +201,7 @@ trait HexesBuilder {
         map_height: i32,
         layout: &HexLayout,
         offset_mode: OffsetHexMode,
-    ) -> Hexes;
+    ) -> (Hexes, HashMap<Hexx, Coord>);
 }
 
 impl HexesBuilder for Hexes {
@@ -210,7 +211,8 @@ impl HexesBuilder for Hexes {
         map_height: i32,
         layout: &HexLayout,
         offset_mode: OffsetHexMode,
-    ) -> Hexes {
+    ) -> (Hexes, HashMap<Hexx, Coord>) {
+        let mut axial_map = HashMap::new();
         let builder: Vec<Hex> = (0..map_width)
             .into_par_iter()
             .flat_map(|x| {
@@ -221,8 +223,15 @@ impl HexesBuilder for Hexes {
             })
             .collect();
 
-        Array2::from_shape_vec((map_width as usize, map_height as usize), builder)
-            .expect("Error creating hexes: failed to match grid dimensions with hex count.")
+        builder.iter().for_each(|hex| {
+            axial_map.insert(hex.axial, hex.offset);
+        });
+
+        (
+            Array2::from_shape_vec((map_width as usize, map_height as usize), builder)
+                .expect("Error creating hexes: failed to match grid dimensions with hex count."),
+            axial_map,
+        )
     }
 }
 
@@ -309,6 +318,7 @@ impl Screen {
 
 pub struct Mesh {
     pub hexes: Hexes,
+    pub axial_map: HashMap<Hexx, Coord>,
     pub screen: Screen,
     pub width: i32,
     pub height: i32,
@@ -369,11 +379,12 @@ impl Mesh {
             ..Default::default()
         };
         let offset_mode = options.offset_mode();
-        let hexes = Hexes::new_hexes(width, height, &layout, offset_mode);
+        let (hexes, axial_map) = Hexes::new_hexes(width, height, &layout, offset_mode);
         let screen = Screen::new(width, height, &hexes);
 
         Self {
             hexes,
+            axial_map,
             screen,
             width,
             height,

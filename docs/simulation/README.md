@@ -65,7 +65,7 @@ Where $A_m$ and $B_m$ are the magnitude (total hexes in area) of the plates.
 #### 4. Slopes
 
 The slopes are a list of arrays that go from the border hex of a plate to its seed. These array will affect the elevation of the hexes in the map.
-The slopes are a breath first search weighted by the distance to the seed. It also apply randomness on selecting the neighbor of the candidate to bring more natural look to the map.
+The slopes are defined by an A* algorithm that goes from the border hex to the seed of the plate. The cost of moving from one hex to another is defined by the difference in distance between each and the seed.
 
 ## Rendering
 

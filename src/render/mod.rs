@@ -1,6 +1,6 @@
 mod colors;
 use crate::mesh::{Coord, Hex, Mesh, Screen};
-use crate::topography::Topography;
+use crate::topography::{InteractionVariant, Topography};
 use hexx::Vec2;
 use image::{ImageBuffer, Rgba};
 use imageproc::drawing::{draw_filled_circle_mut, draw_line_segment_mut, draw_polygon_mut};
@@ -131,44 +131,28 @@ impl Quadrant {
                     let hex = mesh.get_hex(x, y);
                     let elevation = topography.get_hex(x, y);
                     let mut color = colors::Debug::from_elevation(elevation);
-                    let p_coord = topography.plates.map.get(&coord).unwrap();
-                    if p_coord == &coord {
-                        color = colors::Debug::Green.rgba();
-                    } else {
-                        let plate = topography.plates.regions.get(p_coord).unwrap();
-                        plate.border.iter().for_each(|(_n_coord, interaction)| {
-                            if interaction.segment.contains(&coord) {
-                                color = colors::Debug::Red.rgba();
-                            }
-                        });
-                    }
+                    // let p_coord = topography.plates.map.get(&coord).unwrap();
+                    // if p_coord == &coord {
+                    //     color = colors::Debug::Green.rgba();
+                    // } else {
+                    //     let plate = topography.plates.regions.get(p_coord).unwrap();
+                    //     plate.border.iter().for_each(|(_n_coord, interaction)| {
+                    //         if interaction.segment.contains(&coord) {
+                    //             match interaction.variant {
+                    //                 InteractionVariant::Convergent => {
+                    //                     color = colors::Debug::Red.rgba()
+                    //                 }
+                    //                 InteractionVariant::Divergent => {
+                    //                     color = colors::Debug::Yellow.rgba()
+                    //                 }
+                    //             }
+                    //         }
+                    //     });
+                    // }
                     Polygon::new(hex, color, &displacement)
                 })
             })
             .collect();
-
-
-        topography
-            .plates
-            .regions
-            .get(&Coord::new(54, 50))
-            .unwrap()
-            .slopes
-            .iter()
-            .for_each(|slope| {
-                // for slope in slopes.iter() {
-                //     for hex in slope.hexes.iter() {
-                //         let hex = mesh.get_hex(hex.x, hex.y);
-                //         let color = colors::Debug::Blue.rgba();
-                //         polygons.push(Polygon::new(hex, color, &displacement));
-                //     }
-                // }
-                for hex in slope.hexes.iter() {
-                    let hex = mesh.get_hex(hex.x, hex.y);
-                    let color = colors::Debug::Blue.rgba();
-                    polygons.push(Polygon::new(hex, color, &displacement));
-                }
-            });
 
         let mut img =
             ImageBuffer::from_pixel(resolution.x as u32, resolution.y as u32, Rgba([0, 0, 0, 0]));

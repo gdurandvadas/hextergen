@@ -74,26 +74,39 @@ The slopes are defined by an A* algorithm that goes from the seed of the hex to 
 
 #### 5. Elevation
 
-After establishing the initial terrain through a noise algorithm, the landscape undergoes further transformation influenced by tectonic activities.
+After the initial elevation assignation via the noise algorithm, we apply the slope to the map. The slope will affect the elevation of the hexes in the map. The elevation is adjusted linearly with distance from the seed to the border, subtly at first and then more pronouncedly, with a baseline adjustment to ensure even the first step away from the seed has a minimal effect.
 
-The type of interaction—whether convergent or divergent—affects each hex along a slope differently, altering its elevation with respect to its position from the seed to the border:
+For each hex along a slope:
+- **Convergent Interaction**: The elevation increases away from the seed. This interaction simulates the effect of tectonic plates moving towards each other, causing terrain to uplift. The elevation change is determined linearly with distance from the seed to the border, subtly at first and then more pronouncedly, with a baseline adjustment to ensure even the first step away from the seed has a minimal effect.
+  
+  The formula for adjusting elevation is as follows:
 
-- **Convergent Interaction:** Characterized by plates moving towards each other, this interaction causes elevation to increase along the slope. The elevation adjustment is calculated using an exponential-like function that scales with distance from the seed, defined as:
+  $$
+  \text{elevation}_{\text{new}} = (\text{elevation} + (\text{distance\_effect} \times \text{effect\_strength})) \times 1.03
+  $$
 
-$$
-{\text{elevation} = \left( \frac{2}{1 + e^{-k \cdot (\frac{i}{n} - 0.5)}} \right) - 1}
-$$
+  where $\text{distance\_effect} = 0.01 + \frac{i}{n}$ for convergent interactions.
+  
+- **Divergent Interaction**: The elevation decreases away from the seed. This interaction simulates the effect of tectonic plates moving apart from each other, leading to a decrease in terrain elevation. Similar to convergent interactions, the change starts minimally and becomes more significant towards the border.
+  
+  For divergent interactions, the formula is adjusted to account for the negative direction of change:
 
-- **Divergent Interaction:** Characterized by plates moving apart from each other, this interaction results in a decrease in elevation along the slope. Similar to convergent interactions, the adjustment is based on an exponential-like function, albeit inverted:
+  $$
+  \text{elevation}_{\text{new}} = (\text{elevation} + (\text{distance\_effect} \times \text{effect\_strength})) \times 1.03
+  $$
 
-$$
-{\text{elevation} = 1 - \left( \frac{2}{1 + e^{-k \cdot (\frac{i}{n} - 0.5)}} \right)}
-$$
+  where $\text{distance\_effect} = -0.01 - \frac{i}{n}$ for divergent interactions.
 
+In these formulas, $i$ represents the hex index within the slope, $n$ the total number of hexes from the seed to the border (making $\frac{i}{n}$ a normalized distance), and $\text{effect\_strength}$ controls the magnitude of elevation adjustment. The final multiplication by $1.03$ slightly amplifies the adjusted elevation, ensuring the transformation is perceptible across the terrain.
 
-In these formulas, $i$ is the index of the hex in the slope (starting from 0 at the seed), $n$ is the total number of hexes in the slope, and $k$ is a constant determining the steepness of the elevation change. This design ensures that elevation changes more significantly closer to the border, emphasizing the impact of tectonic interactions on topography.
+This method allows elevation to dynamically reflect the geological processes at play, with the $effect\_strength$ parameter offering control over the degree to which these processes impact the landscape.
 
-The application of these formulas transforms the landscape, ensuring that elevations remain bounded between -1 and 1, thereby maintaining realistic terrain features. Through this process, the dynamic and complex nature of geological formations is captured, illustrating the significant influence of tectonic forces on the world's topography.
+![Tectonic Elevations](./tectonic_elevations.png)
+
+| **Before**                            | **After**                                 |
+| ------------------------------------- | ----------------------------------------- |
+| ![Before Elevation](./elevations.png) | ![After Elevation](./tectonic_elevations.png) |
+
 
 ## Rendering
 

@@ -5,12 +5,12 @@ use crate::{
 };
 use hashbrown::{HashMap, HashSet};
 use hexx::Vec2;
-use rand::seq::SliceRandom;
+use rand::seq::{index, SliceRandom};
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
 use rayon::prelude::*;
-use std::collections::VecDeque;
 use std::f32::consts::PI;
+use std::{collections::VecDeque, f32::consts::E};
 
 // Seeds for the tectonic plates
 type Seeds = Vec<Coord>;
@@ -65,9 +65,12 @@ impl Angle {
     }
 }
 
+const SCALE: f32 = 0.04;
+const D: f32 = 0.01;
+
 // Categorize the angle relationship between two plates
 #[derive(Debug, Clone, Copy)]
-enum InteractionVariant {
+pub enum InteractionVariant {
     Convergent,
     Divergent,
 }
@@ -112,6 +115,26 @@ impl InteractionVariant {
     // Calculate the angle between two points
     fn angle_between(origin: &Vec2, other: &Vec2) -> f32 {
         ((other.y - origin.y).atan2(other.x - origin.x) * 180.0 / PI).rem_euclid(360.0)
+    }
+
+    pub fn effect(&self, index: usize, slope_len: usize, elevation: f32) -> f32 {
+        if index == 0 {
+            return elevation;
+        }
+
+        let effect_strength = 0.01;
+        let i = index as f32;
+        let n = (slope_len - 1) as f32;
+
+        let distance_effect = match self {
+            InteractionVariant::Convergent => 0.01 + (i / n),
+            InteractionVariant::Divergent => -0.01 + (-i / n),
+        };
+
+        let adjustment = distance_effect * effect_strength;
+
+        // Adjust the elevation by the calculated adjustment, without halving the scale
+        (elevation + adjustment) * 1.03
     }
 }
 

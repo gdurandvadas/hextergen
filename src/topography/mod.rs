@@ -1,5 +1,8 @@
 mod plates;
 
+use log::debug;
+pub use plates::InteractionVariant;
+
 use crate::mesh::Mesh;
 use crate::utils::noise::OctaveNoise;
 use crate::{cmd::GenerateOptions, mesh::Coord};
@@ -39,10 +42,59 @@ pub struct Topography {
 
 impl Topography {
     pub fn new(options: &GenerateOptions, mesh: &Mesh) -> Self {
-        let elevations = Elevations::build(options);
+        let mut elevations = Elevations::build(options);
         let mut plates = Plates::new(options, &mesh);
         plates.borders(&mesh);
         plates.slopes(&mesh);
+
+        plates.regions.iter().for_each(|(p_coord, plate)| {
+            plate.slopes.iter().for_each(|slope| {
+                slope.hexes.iter().enumerate().for_each(|(i, hex)| {
+                    elevations
+                        .get_mut([hex.x as usize, hex.y as usize])
+                        .map(|elevation| {
+                            *elevation =
+                                slope
+                                    .variant
+                                    .effect(i, slope.hexes.len(), elevation.clone())
+                        });
+                })
+            })
+        });
+
+        let min_elevation =
+            elevations.iter().fold(
+                f32::MAX,
+                |acc, &elevation| {
+                    if elevation < acc {
+                        elevation
+                    } else {
+                        acc
+                    }
+                },
+            );
+        let max_elevation =
+            elevations.iter().fold(
+                f32::MIN,
+                |acc, &elevation| {
+                    if elevation > acc {
+                        elevation
+                    } else {
+                        acc
+                    }
+                },
+            );
+
+        debug!("Min elevation: {}", min_elevation);
+        debug!("Max elevation: {}", max_elevation);
+
+        // elevations.mapv_inplace(|elevation| {
+        //     if elevation < 0.0 {
+        //         min_elevation / elevation
+        //     } else {
+        //         max_elevation / elevation
+        //     }
+        // });
 
         Topography { elevations, plates }
     }

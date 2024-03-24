@@ -2,7 +2,6 @@ mod plates;
 
 use log::debug;
 pub use plates::InteractionVariant;
-
 use crate::mesh::Mesh;
 use crate::utils::noise::OctaveNoise;
 use crate::{cmd::GenerateOptions, mesh::Coord};
@@ -47,7 +46,7 @@ impl Topography {
         plates.borders(&mesh);
         plates.slopes(&mesh);
 
-        plates.regions.iter().for_each(|(p_coord, plate)| {
+        plates.regions.iter().for_each(|(_p_coord, plate)| {
             plate.slopes.iter().for_each(|slope| {
                 slope.hexes.iter().enumerate().for_each(|(i, hex)| {
                     elevations
@@ -87,14 +86,6 @@ impl Topography {
 
         debug!("Min elevation: {}", min_elevation);
         debug!("Max elevation: {}", max_elevation);
-
-        // elevations.mapv_inplace(|elevation| {
-        //     if elevation < 0.0 {
-        //         min_elevation / elevation
-        //     } else {
-        //         max_elevation / elevation
-        //     }
-        // });
 
         Topography { elevations, plates }
     }

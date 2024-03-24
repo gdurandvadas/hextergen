@@ -123,7 +123,7 @@ impl Quadrant {
         let resolution = self.resolution(&center.center, &mesh.screen);
         let displacement = Point::new(relative_displacement.x, relative_displacement.y);
 
-        let mut polygons: Polygons = (start.x..end.x)
+        let  polygons: Polygons = (start.x..end.x)
             .into_par_iter()
             .flat_map(|x| {
                 (start.y..end.y).into_par_iter().map(move |y| {
@@ -131,24 +131,24 @@ impl Quadrant {
                     let hex = mesh.get_hex(x, y);
                     let elevation = topography.get_hex(x, y);
                     let mut color = colors::Debug::from_elevation(elevation);
-                    // let p_coord = topography.plates.map.get(&coord).unwrap();
-                    // if p_coord == &coord {
-                    //     color = colors::Debug::Green.rgba();
-                    // } else {
-                    //     let plate = topography.plates.regions.get(p_coord).unwrap();
-                    //     plate.border.iter().for_each(|(_n_coord, interaction)| {
-                    //         if interaction.segment.contains(&coord) {
-                    //             match interaction.variant {
-                    //                 InteractionVariant::Convergent => {
-                    //                     color = colors::Debug::Red.rgba()
-                    //                 }
-                    //                 InteractionVariant::Divergent => {
-                    //                     color = colors::Debug::Yellow.rgba()
-                    //                 }
-                    //             }
-                    //         }
-                    //     });
-                    // }
+                    let p_coord = topography.plates.map.get(&coord).unwrap();
+                    if p_coord == &coord {
+                        color = colors::Debug::Green.rgba();
+                    } else {
+                        let plate = topography.plates.regions.get(p_coord).unwrap();
+                        plate.border.iter().for_each(|(_n_coord, interaction)| {
+                            if interaction.segment.contains(&coord) {
+                                match interaction.variant {
+                                    InteractionVariant::Convergent => {
+                                        color = colors::Debug::Yellow.rgba()
+                                    }
+                                    InteractionVariant::Divergent => {
+                                        color = colors::Debug::Blue.rgba()
+                                    }
+                                }
+                            }
+                        });
+                    }
                     Polygon::new(hex, color, &displacement)
                 })
             })

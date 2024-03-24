@@ -20,11 +20,9 @@ For the noise coordenates, I'm converting the offset `x` and `y` to a cilindrica
 
 ![Elevation Texture](./elevations.png)
 
-### Tectonic Plates
+The topography shape is influenced by a tectonic plates simulation, which is divided into five key steps:
 
-Tectonic plates are instrumental in shaping mountain ranges and oceanic trenches within the simulation. This is accomplished through the following steps.
-
-#### 1. Seed Placement
+### 1. Seed Placement
 
 The map's initiation begins with the strategic placement of seed points that act as identifiers for individual tectonic plates. I initially wanted to use a Poisson Disk approach, but the result were too uniform for my taste, so I ended upp creating a simple logic that picks the seeds randomly ensuring aminimum distance between the points.
 
@@ -32,11 +30,11 @@ The map's initiation begins with the strategic placement of seed points that act
 | -------------------------------------------- | ---------------------------------------------- |
 | ![Custom Seed Placement](./custom_seeds.png) | ![Poisson Seed Placement](./poisson_seeds.png) |
 
-#### 2. Plate Growth
+### 2. Plate Growth
 
 The growth algorithm expands each seed into a full-fledged tectonic plate using a breadth-first search mechanism. This expansion is facilitated by a specially designed random queue to model natural geological progression and form distinct tectonic plates on the map. In this step, plates are also assigned a direction for the movement, which is just an random angle from $0º$ to $360º$.
 
-#### 3. Plate Borders
+### 3. Plate Borders
 
 To understand the relation between the plates and how they interact, we need to define their borders. This is done by going through all hexes in a plate's area and identifying if the neighbors of the hex are from the same plate or not. If they are not, we add the hex to the border list. The plates on the top and bottom edges of the map have a special edge border identifyed by the coordinate `(-1,-1)` and they are always Divergent.
 
@@ -49,8 +47,8 @@ To understand the interaction between the plates, we check the relative plate's 
 
 | **Visualization**                                              | **Description**                                                                                                            |
 | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| ![Angle Between](./simulation/angle_between.png)               | Identify the delta between $0º$ and the angle between the plates' seeds.                                                   |
-| ![Rectified Directions](./simulation/rectified_directions.png) | We rotate the angle between to become our new $0º$, which help us to understand the relative direction between the plates. |
+| ![Angle Between](./angle_between.png)               | Identify the delta between $0º$ and the angle between the plates' seeds.                                                   |
+| ![Rectified Directions](./rectified_directions.png) | We rotate the angle between to become our new $0º$, which help us to understand the relative direction between the plates. |
 
 There are four type of interactions we can expect with this simulation:
 | **Directions**                   | **Interaction**                                        |
@@ -62,7 +60,7 @@ There are four type of interactions we can expect with this simulation:
 
 Where $A_m$ and $B_m$ are the magnitude (total hexes in area) of the plates.
 
-#### 4. Slopes
+### 4. Slopes
 
 The slopes are a list of arrays that go from the border hex of a plate to its seed. These array will affect the elevation of the hexes in the map.
 The slopes are defined by an A* algorithm that goes from the seed of the hex to the border. The cost of moving from one hex to another is defined by the difference in distance between each and the border.
@@ -72,7 +70,7 @@ The slopes are defined by an A* algorithm that goes from the seed of the hex to 
 | ------------------------- | --------------------------- | ----------------------------- | --------------------------- | ------------------------- |
 | ![Slope I](./slope_I.png) | ![Slope II](./slope_II.png) | ![Slope III](./slope_III.png) | ![Slope IV](./slope_IV.png) | ![Slope n](./slope_n.png) |
 
-#### 5. Elevation
+### 5. Elevation
 
 After the initial elevation assignation via the noise algorithm, we apply the slope to the map. The slope will affect the elevation of the hexes in the map. The elevation is adjusted linearly with distance from the seed to the border, subtly at first and then more pronouncedly, with a baseline adjustment to ensure even the first step away from the seed has a minimal effect.
 
@@ -103,9 +101,13 @@ This method allows elevation to dynamically reflect the geological processes at 
 
 ![Tectonic Elevations](./tectonic_elevations.png)
 
-| **Before**                            | **After**                                 |
-| ------------------------------------- | ----------------------------------------- |
+| **Before**                            | **After**                                     |
+| ------------------------------------- | --------------------------------------------- |
 | ![Before Elevation](./elevations.png) | ![After Elevation](./tectonic_elevations.png) |
+
+You can see here the tectonic interactions and how they affect the elevation of the map. In `yellow` we have the Convergent interactions and in `blue` the Divergent interactions.
+
+![Interaction Elevations](./interaction_elevations.png)
 
 
 ## Rendering

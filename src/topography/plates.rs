@@ -5,12 +5,12 @@ use crate::{
 };
 use hashbrown::{HashMap, HashSet};
 use hexx::Vec2;
-use rand::seq::{index, SliceRandom};
+use rand::seq::SliceRandom;
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
 use rayon::prelude::*;
+use std::collections::VecDeque;
 use std::f32::consts::PI;
-use std::{collections::VecDeque, f32::consts::E};
 
 // Seeds for the tectonic plates
 type Seeds = Vec<Coord>;
@@ -65,9 +65,6 @@ impl Angle {
     }
 }
 
-const SCALE: f32 = 0.04;
-const D: f32 = 0.01;
-
 // Categorize the angle relationship between two plates
 #[derive(Debug, Clone, Copy)]
 pub enum InteractionVariant {
@@ -118,23 +115,26 @@ impl InteractionVariant {
     }
 
     pub fn effect(&self, index: usize, slope_len: usize, elevation: f32) -> f32 {
-        if index == 0 {
-            return elevation;
+        let contrast = 1.065;
+        let steepness = 0.013;
+
+        if (index as f32) < (slope_len as f32) * 0.3 {
+            return elevation * 0.995;
         }
 
-        let effect_strength = 0.01;
+
         let i = index as f32;
         let n = (slope_len - 1) as f32;
 
         let distance_effect = match self {
-            InteractionVariant::Convergent => 0.01 + (i / n),
-            InteractionVariant::Divergent => -0.01 + (-i / n),
+            InteractionVariant::Convergent => i / n,
+            InteractionVariant::Divergent => -i / n,
         };
 
-        let adjustment = distance_effect * effect_strength;
+        let adjustment = distance_effect * steepness;
 
         // Adjust the elevation by the calculated adjustment, without halving the scale
-        (elevation + adjustment) * 1.03
+        (elevation + adjustment) * contrast
     }
 }
 
@@ -374,7 +374,7 @@ impl Plates {
             plate.slopes = plate
                 .border
                 .par_iter()
-                .flat_map(|(n_coord, interaction)| Slopes::build(p_coord, interaction, mesh))
+                .flat_map(|(_n_coord, interaction)| Slopes::build(p_coord, interaction, mesh))
                 .collect();
         });
     }

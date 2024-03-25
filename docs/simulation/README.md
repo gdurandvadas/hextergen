@@ -10,7 +10,7 @@ The mesh constitutes the foundational geometric representation of the terrain. I
 
 The mesh also encapsulates pixel information for each hex, including displacement vectors and resolution parameters. These details are essential for precise positioning of hexes on the rendering canvas, ensuring that the final image is a true representation of the simulated world.
 
-![Mesh Visualization](./mesh.png)
+![Mesh Visualization](http://cdn.gedv.me/hextergen/simulation/mesh.png)
 
 ## Topography
 
@@ -18,7 +18,7 @@ The topographic aspect of the simulation determines the elevations and hydrograp
 
 For the noise coordenates, I'm converting the offset `x` and `y` to a cilindrical projection. This way the left and right side of the map are continuous.
 
-![Elevation Texture](./elevations.png)
+![Elevation Texture](http://cdn.gedv.me/hextergen/simulation/elevations.png)
 
 The topography shape is influenced by a tectonic plates simulation, which is divided into five key steps:
 
@@ -26,9 +26,9 @@ The topography shape is influenced by a tectonic plates simulation, which is div
 
 The map's initiation begins with the strategic placement of seed points that act as identifiers for individual tectonic plates. I initially wanted to use a Poisson Disk approach, but the result were too uniform for my taste, so I ended upp creating a simple logic that picks the seeds randomly ensuring aminimum distance between the points.
 
-| **Custom Distribution**                      | **Poisson Distribution**                       |
-| -------------------------------------------- | ---------------------------------------------- |
-| ![Custom Seed Placement](./custom_seeds.png) | ![Poisson Seed Placement](./poisson_seeds.png) |
+| **Custom Distribution**                                                            | **Poisson Distribution**                                                             |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| ![Custom Seed Placement](http://cdn.gedv.me/hextergen/simulation/custom_seeds.png) | ![Poisson Seed Placement](http://cdn.gedv.me/hextergen/simulation/poisson_seeds.png) |
 
 ### 2. Plate Growth
 
@@ -38,17 +38,17 @@ The growth algorithm expands each seed into a full-fledged tectonic plate using 
 
 To understand the relation between the plates and how they interact, we need to define their borders. This is done by going through all hexes in a plate's area and identifying if the neighbors of the hex are from the same plate or not. If they are not, we add the hex to the border list. The plates on the top and bottom edges of the map have a special edge border identifyed by the coordinate `(-1,-1)` and they are always Divergent.
 
-![Tectonic Plates Borders](./plates_border.png)
+![Tectonic Plates Borders](http://cdn.gedv.me/hextergen/simulation/plates_border.png)
 
 To understand the interaction between the plates, we check the relative plate's direction between the neighbors.
 
 > **Note**: There are a lot of interaction types for tectonic plates in the real world. They depend on the plate varian (Continental or Oceanic), direction of movement, compression rate.
 > But for this simulation, I'm only focusing on interactions that bring visual apeal to the map.
 
-| **Visualization**                                              | **Description**                                                                                                            |
-| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| ![Angle Between](./angle_between.png)               | Identify the delta between $0º$ and the angle between the plates' seeds.                                                   |
-| ![Rectified Directions](./rectified_directions.png) | We rotate the angle between to become our new $0º$, which help us to understand the relative direction between the plates. |
+| **Visualization**                                                                         | **Description**                                                                                                            |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| ![Angle Between](http://cdn.gedv.me/hextergen/simulation/angle_between.png)               | Identify the delta between $0º$ and the angle between the plates' seeds.                                                   |
+| ![Rectified Directions](http://cdn.gedv.me/hextergen/simulation/rectified_directions.png) | We rotate the angle between to become our new $0º$, which help us to understand the relative direction between the plates. |
 
 There are four type of interactions we can expect with this simulation:
 | **Directions**                   | **Interaction**                                        |
@@ -66,9 +66,9 @@ The slopes are a list of arrays that go from the border hex of a plate to its se
 The slopes are defined by an A* algorithm that goes from the seed of the hex to the border. The cost of moving from one hex to another is defined by the difference in distance between each and the border.
 
 
-| $i_I$                     | $i_{II}$                    | $i_{III}$                     | $i_{IV}$                    | $i_{n}$                   |
-| ------------------------- | --------------------------- | ----------------------------- | --------------------------- | ------------------------- |
-| ![Slope I](./slope_I.png) | ![Slope II](./slope_II.png) | ![Slope III](./slope_III.png) | ![Slope IV](./slope_IV.png) | ![Slope n](./slope_n.png) |
+| $i_I$                                                           | $i_{II}$                                                          | $i_{III}$                                                           | $i_{IV}$                                                          | $i_{n}$                                                         |
+| --------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------- |
+| ![Slope I](http://cdn.gedv.me/hextergen/simulation/slope_I.png) | ![Slope II](http://cdn.gedv.me/hextergen/simulation/slope_II.png) | ![Slope III](http://cdn.gedv.me/hextergen/simulation/slope_III.png) | ![Slope IV](http://cdn.gedv.me/hextergen/simulation/slope_IV.png) | ![Slope n](http://cdn.gedv.me/hextergen/simulation/slope_n.png) |
 
 ### 5. Elevation
 
@@ -99,15 +99,15 @@ In these formulas, $i$ represents the hex index within the slope, $n$ the total 
 
 This method allows elevation to dynamically reflect the geological processes at play, with the $effect\_strength$ parameter offering control over the degree to which these processes impact the landscape.
 
-![Tectonic Elevations](./tectonic_elevations.png)
+![Tectonic Elevations](http://cdn.gedv.me/hextergen/simulation/tectonic_elevations.png)
 
-| **Before**                            | **After**                                     |
-| ------------------------------------- | --------------------------------------------- |
-| ![Before Elevation](./elevations.png) | ![After Elevation](./tectonic_elevations.png) |
+| **Before**                                                                  | **After**                                                                           |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| ![Before Elevation](http://cdn.gedv.me/hextergen/simulation/elevations.png) | ![After Elevation](http://cdn.gedv.me/hextergen/simulation/tectonic_elevations.png) |
 
 You can see here the tectonic interactions and how they affect the elevation of the map. In `yellow` we have the Convergent interactions and in `blue` the Divergent interactions.
 
-![Interaction Elevations](./interaction_elevations.png)
+![Interaction Elevations](http://cdn.gedv.me/hextergen/simulation/interaction_elevations.png)
 
 
 ## Rendering
@@ -120,16 +120,16 @@ To manage the demands of large image sizes, the rendering process is divided int
 
 - **Top Left Quadrant**
   
-  ![Top Left Quadrant](./../../_debug_top_left.png)
+  ![Top Left Quadrant](http://cdn.gedv.me/hextergen/simulation/../../_debug_top_left.png)
 
 - **Top Right Quadrant**
   
-  ![Top Right Quadrant](./../../_debug_top_right.png)
+  ![Top Right Quadrant](http://cdn.gedv.me/hextergen/simulation/../../_debug_top_right.png)
 
 - **Bottom Left Quadrant**
   
-  ![Bottom Left Quadrant](./../../_debug_bottom_left.png)
+  ![Bottom Left Quadrant](http://cdn.gedv.me/hextergen/simulation/../../_debug_bottom_left.png)
 
 - **Bottom Right Quadrant**
   
-  ![Bottom Right Quadrant](./../../_debug_bottom_right.png)
+  ![Bottom Right Quadrant](http://cdn.gedv.me/hextergen/simulation/../../_debug_bottom_right.png)

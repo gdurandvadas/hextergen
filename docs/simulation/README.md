@@ -80,24 +80,24 @@ For each hex along a slope:
   The formula for adjusting elevation is as follows:
 
   $$
-  \text{elevation}_{\text{new}} = (\text{elevation} + (\text{distance\_effect} \times \text{effect\_strength})) \times 1.03
+  \text{elevation-new} = (\text{elevation} + (\text{distance-effect} \times \text{effect-strength})) \times 1.03
   $$
 
-  where $\text{distance\_effect} = 0.01 + \frac{i}{n}$ for convergent interactions.
+  where $\text{distance-effect} = 0.01 + \frac{i}{n}$ for convergent interactions.
   
 - **Divergent Interaction**: The elevation decreases away from the seed. This interaction simulates the effect of tectonic plates moving apart from each other, leading to a decrease in terrain elevation. Similar to convergent interactions, the change starts minimally and becomes more significant towards the border.
   
   For divergent interactions, the formula is adjusted to account for the negative direction of change:
 
   $$
-  \text{elevation}_{\text{new}} = (\text{elevation} + (\text{distance\_effect} \times \text{effect\_strength})) \times 1.03
+  \text{elevation-new} = (\text{elevation} + (\text{distance-effect} \times \text{effect-strength})) \times 1.03
   $$
 
-  where $\text{distance\_effect} = -0.01 - \frac{i}{n}$ for divergent interactions.
+  where $\text{distance-effect} = -0.01 - \frac{i}{n}$ for divergent interactions.
 
-In these formulas, $i$ represents the hex index within the slope, $n$ the total number of hexes from the seed to the border (making $\frac{i}{n}$ a normalized distance), and $\text{effect\_strength}$ controls the magnitude of elevation adjustment. The final multiplication by $1.03$ slightly amplifies the adjusted elevation, ensuring the transformation is perceptible across the terrain.
+In these formulas, $i$ represents the hex index within the slope, $n$ the total number of hexes from the seed to the border (making $\frac{i}{n}$ a normalized distance), and $\text{effect-strength}$ controls the magnitude of elevation adjustment. The final multiplication by $1.03$ slightly amplifies the adjusted elevation, ensuring the transformation is perceptible across the terrain.
 
-This method allows elevation to dynamically reflect the geological processes at play, with the $effect\_strength$ parameter offering control over the degree to which these processes impact the landscape.
+This method allows elevation to dynamically reflect the geological processes at play, with the $effect-strength$ parameter offering control over the degree to which these processes impact the landscape.
 
 ![Tectonic Elevations](http://cdn.gedv.me/hextergen/simulation/tectonic_elevations.png)
 
